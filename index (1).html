@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f2f5f9">
+<meta name="robots" content="noindex">
+<title>Мойка · Минская 10А</title>
+<style>
+  :root{
+    --bg:#f2f5f9; --card:#fff; --ink:#0f172a; --muted:#5b6678; --line:#dfe5ee;
+    --green:#15803d; --green-bg:#e8f6ee; --green-line:#b7e2c6;
+    --red:#c81e1e; --red-bg:#fdecec; --red-line:#f5c2c2;
+    --blue:#1d4ed8; --radius:18px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font)}
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 22px}
+  .brand{font-weight:700;font-size:15px}
+  .brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+  .post-badge{background:var(--ink);color:#fff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px;white-space:nowrap}
+  h1{font-size:27px;line-height:1.2;margin:0 0 18px}
+  h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+  .screen{display:none}.screen.on{display:block}
+
+  /* выбор */
+  .choice{border-radius:var(--radius);padding:20px;margin-bottom:14px}
+  .choice.good{background:var(--green-bg);border:2px solid var(--green-line)}
+  .choice.help{background:var(--red-bg);border:2px solid var(--red-line);display:block;width:100%;text-align:left;
+    font:inherit;color:inherit;cursor:pointer}
+  .choice .ttl{display:block;font-size:20px;font-weight:700;margin-bottom:4px}
+  .choice.good .ttl{color:var(--green)} .choice.help .ttl{color:var(--red)}
+  .choice .sub{display:block;color:var(--muted);font-size:15px}
+  .choice.help .go{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .choice.help .arrow{flex:none;width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:20px}
+  .maps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:14px;
+    border:0;padding:12px 16px;font:600 16px/1.2 var(--font);text-decoration:none;cursor:pointer;width:100%}
+  .btn.green{background:var(--green);color:#fff}
+  .btn.red{background:var(--red);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn[disabled]{opacity:.6;cursor:default}
+  .alt{text-align:center;color:var(--muted);font-size:14px;margin-top:22px}
+  .alt a{color:var(--blue);text-decoration:none;font-weight:600;margin:0 6px;white-space:nowrap}
+
+  /* форма */
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+  .back{background:none;border:0;color:var(--blue);font:600 15px var(--font);padding:6px 0;margin-bottom:10px;cursor:pointer}
+  .lead{color:var(--muted);margin:0 0 18px;font-size:15px}
+  .t{display:block;font-weight:700;margin:0 0 10px;font-size:15px}
+  .t i{font-style:normal;font-weight:400;color:var(--muted)}
+  .field{margin-bottom:20px}.field:last-child{margin-bottom:0}
+
+  .opts{display:grid;gap:8px}
+  .opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;
+    border-radius:14px;padding:13px 14px;font:500 16px/1.3 var(--font);color:var(--ink);cursor:pointer;min-height:52px}
+  .opt::before{content:"";flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #b9c3d2;background:#fff}
+  .opt.on{border-color:var(--ink);background:#f6f8fb}
+  .opt.on::before{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 5px,#fff 6px)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;
+    font:500 15px var(--font);color:var(--ink);cursor:pointer;min-height:46px}
+  .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .chips.posts{display:grid;grid-template-columns:repeat(6,1fr)}
+  .chips.posts .chip{padding:10px 0;text-align:center;font-weight:700;font-size:17px}
+  .chips.eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
+
+  input[type=text],input[type=tel],input[type=number],input[type=datetime-local],textarea{
+    width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:16px var(--font);
+    background:#fff;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+  input:focus,textarea:focus{border-color:var(--ink)}
+  textarea{min-height:88px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{color:var(--muted);font-size:13px;margin-top:8px}
+  .err{color:var(--red);font-size:14px;margin-top:8px;display:none}
+  .err.on{display:block}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+  .files{display:flex;flex-wrap:wrap;gap:8px}
+  .files:not(:empty){margin-top:10px}
+  .thumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:#e5e9f0}
+  .thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .tag{position:absolute;left:4px;bottom:4px;background:rgba(15,23,42,.75);color:#fff;font-size:11px;border-radius:6px;padding:1px 5px}
+  .thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;
+    background:rgba(15,23,42,.75);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
+  .addfile{border:1.5px dashed #b9c3d2;background:#fff;color:var(--ink);border-radius:14px;min-height:56px;width:100%;
+    font:600 15px var(--font);cursor:pointer}
+
+  .progress{height:6px;background:#e5e9f0;border-radius:3px;overflow:hidden;margin-top:12px;display:none}
+  .progress.on{display:block}
+  .progress i{display:block;height:100%;width:0;background:var(--red);transition:width .2s}
+  .privacy{color:var(--muted);font-size:13px;text-align:center;margin-top:12px}
+
+  /* готово */
+  .done{text-align:center;padding:30px 20px}
+  .done .ico{width:64px;height:64px;border-radius:50%;background:var(--green-bg);color:var(--green);
+    display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px}
+  .done .num{display:inline-block;margin:14px 0 4px;background:var(--bg);border-radius:12px;padding:8px 14px;font-size:15px;color:var(--muted)}
+  .done .num b{color:var(--ink);font-size:18px}
+  .vid-note{background:#fff7e6;border-radius:14px;padding:14px;margin-top:16px;text-align:left;font-size:15px}
+  .vid-note .btn{margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Мойка самообслуживания<small>Витебск, ул. Минская 10А</small></div>
+    <div class="post-badge" id="postBadge" hidden></div>
+  </header>
+
+  <!-- ЭКРАН 1 -->
+  <section class="screen on" id="s-choice">
+    <h1>Как прошла мойка?</h1>
+
+    <div class="choice good">
+      <span class="ttl">Оставить отзыв</span>
+      <span class="sub">Займёт минуту — и поможет другим водителям выбрать мойку</span>
+      <div class="maps">
+        <a class="btn green" id="lnkYandex" target="_blank" rel="noopener">Яндекс Карты</a>
+        <a class="btn green" id="lnkGoogle" target="_blank" rel="noopener">Google Карты</a>
+      </div>
+    </div>
+
+    <button class="choice help" id="btnHelp" type="button">
+      <span class="go">
+        <span>
+          <span class="ttl">Нужна помощь</span>
+          <span class="sub">Терминал не зачислил деньги, не включилась программа, что-то сломалось — <span class="reply"></span></span>
+        </span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </span>
+    </button>
+
+    <div class="alt" id="altContacts"></div>
+  </section>
+
+  <!-- ЭКРАН 2 -->
+  <section class="screen" id="s-form">
+    <button class="back" type="button" data-go="s-choice">← Назад</button>
+    <h2>Что случилось?</h2>
+    <p class="lead">Проверим записи с камер и свяжемся с вами <span class="reply-short"></span>.</p>
+
+    <form id="form" novalidate>
+      <div class="card">
+        <div class="field">
+          <div class="opts" id="cats"></div>
+          <div class="err" id="e-cat">Выберите, что случилось</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field" id="postField">
+          <span class="t">Номер поста</span>
+          <div class="chips posts" id="posts"></div>
+          <div class="hint">Номер написан над терминалом</div>
+          <div class="err" id="e-post">Выберите пост</div>
+        </div>
+        <div class="field">
+          <span class="t">Когда это было</span>
+          <div class="chips eq" id="whenChips">
+            <button type="button" class="chip on" data-v="now">Только что</button>
+            <button type="button" class="chip" data-v="earlier">Раньше</button>
+          </div>
+          <input type="datetime-local" id="whenInput" style="display:none;margin-top:10px" aria-label="Дата и время">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row2 field">
+          <div>
+            <label class="t" for="amount">Сумма, BYN</label>
+            <input type="number" id="amount" inputmode="decimal" min="0" step="0.5" placeholder="Например, 5">
+          </div>
+          <div>
+            <label class="t" for="plate">Номер авто</label>
+            <input type="text" id="plate" autocapitalize="characters" autocomplete="off" placeholder="1234 AB-2">
+          </div>
+        </div>
+        <div class="field">
+          <span class="t">Как оплачивали</span>
+          <div class="chips eq" id="pay">
+            <button type="button" class="chip" data-v="Наличные">Наличные</button>
+            <button type="button" class="chip" data-v="Карта / телефон">Карта / телефон</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="t" for="comment">Подробнее <i>— по желанию</i></label>
+          <textarea id="comment" maxlength="1000" placeholder="Например: внёс 5 рублей, на экране осталось 0"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="t">Фото или видео <i>— по желанию</i></span>
+        <button type="button" class="addfile" id="addFile">＋ Добавить фото или видео</button>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
+        <div class="files" id="files"></div>
+        <div class="hint" id="fileHint">Например, экран терминала. До 3 фото и одно короткое видео.</div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label class="t" for="phone">Ваш телефон</label>
+          <input type="tel" id="phone" inputmode="tel" autocomplete="tel" value="+375 " placeholder="+375 (29) 123-45-67">
+          <div class="err" id="e-phone">Проверьте номер — по нему мы с вами свяжемся</div>
+        </div>
+        <div class="field">
+          <span class="t">Как удобнее связаться</span>
+          <div class="chips eq" id="contact"></div>
+        </div>
+      </div>
+
+      <input type="text" name="website" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <button class="btn red" id="submit" type="submit">Отправить заявку</button>
+      <div class="progress" id="progress"><i></i></div>
+      <div class="err" id="e-send" style="text-align:center"></div>
+      <p class="privacy">Телефон нужен только для связи по этой заявке.</p>
+    </form>
+  </section>
+
+  <!-- ЭКРАН 3 -->
+  <section class="screen" id="s-done">
+    <div class="card done">
+      <div class="ico">✓</div>
+      <h2>Заявка принята</h2>
+      <p class="lead" style="margin:0" id="doneText"></p>
+      <div class="num" id="doneNum"></div>
+      <div class="vid-note" id="vidNote" hidden>
+        Видео оказалось слишком большим для формы. Отправьте его нам в Viber и укажите номер заявки.
+        <a class="btn ghost" id="vidViber">Отправить видео в Viber</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ======================== НАСТРОЙКИ ======================== */
+const CONFIG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwsicWQuIhtdmMZP-xylBFHSVZ2mZ3f3ap7YH5zfhYhJoTqKYxwgF1GqTSuWX6wcM27/exec',
+  yandexUrl: 'https://yandex.by/maps/-/CXFTm08y',
+  googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
+  phone:     '+375296400339',     // рабочий номер для звонков
+  viber:     '+375296400339',     // номер с Viber
+  telegram:  '',                  // username без @ (необязательно)
+  responseMinutes: 15,            // за сколько минут отвечаете
+  hours: { from: 8, to: 22 },     // когда отвечаете; вне этих часов номер телефона скрыт
+  posts: 6,
+  maxPhotos: 3,
+  maxVideoMB: 25,
+  categories: [
+    'Терминал не зачислил деньги',
+    'Не включилась программа',
+    'Нет воды, пены или воска',
+    'Слабый напор',
+    'Пылесос не работает',
+    'Другое'
+  ]
+};
+/* =========================================================== */
+
+const $ = id => document.getElementById(id);
+const state = { post:null, cat:null, when:'now', pay:null, contact:'Звонок', files:[], bigVideo:false };
+
+// ---- пост из QR: ?post=3
+const qp = new URLSearchParams(location.search).get('post');
+if (qp && +qp >= 1 && +qp <= CONFIG.posts) {
+  state.post = String(+qp);
+  $('postBadge').textContent = 'Пост ' + state.post; $('postBadge').hidden = false;
+}
+
+// ---- срок ответа с учётом рабочих часов
+function inHours(){
+  if (!CONFIG.hours) return true;
+  const h = new Date().getHours();
+  return h >= CONFIG.hours.from && h < CONFIG.hours.to;
+}
+const replyShort = () => inHours() ? `в течение ${CONFIG.responseMinutes} минут` : `утром, после ${CONFIG.hours.from}:00`;
+document.querySelectorAll('.reply').forEach(el => el.textContent = 'ответим ' + replyShort());
+document.querySelectorAll('.reply-short').forEach(el => el.textContent = replyShort());
+
+// ---- ссылки
+$('lnkYandex').href = CONFIG.yandexUrl;
+$('lnkGoogle').href = CONFIG.googleUrl;
+const viberHref = `viber://chat?number=${encodeURIComponent(CONFIG.viber)}`;
+const alt = [];
+if (inHours()) alt.push(`<a href="tel:${CONFIG.phone}">Позвонить</a>`);
+alt.push(`<a href="${viberHref}">Viber</a>`);
+if (CONFIG.telegram) alt.push(`<a href="https://t.me/${CONFIG.telegram}" target="_blank" rel="noopener">Telegram</a>`);
+$('altContacts').innerHTML = 'Удобнее напрямую? ' + alt.join('');
+$('vidViber').href = viberHref;
+
+// ---- навигация
+function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); scrollTo(0,0); }
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+$('btnHelp').onclick = () => go('s-form');
+
+// ---- группы выбора
+function group(container, cls, items, key, onPick){
+  if (items) container.innerHTML = items.map(v =>
+    `<button type="button" class="${cls}${v===state[key]?' on':''}" data-v="${v}">${v}</button>`).join('');
+  container.querySelectorAll('.' + cls).forEach(c => c.onclick = () => {
+    container.querySelectorAll('.' + cls).forEach(x => x.classList.remove('on'));
+    c.classList.add('on'); state[key] = c.dataset.v;
+    const e = { post:'e-post', cat:'e-cat' }[key]; if (e) $(e).classList.remove('on');
+    if (onPick) onPick(state[key]);
+  });
+}
+group($('cats'), 'opt', CONFIG.categories, 'cat');
+if (state.post) $('postField').hidden = true;
+group($('posts'), 'chip', Array.from({length:CONFIG.posts}, (_,i) => String(i+1)), 'post');
+group($('pay'), 'chip', null, 'pay');
+group($('contact'), 'chip', CONFIG.telegram ? ['Звонок','Viber','Telegram'] : ['Звонок','Viber'], 'contact');
+group($('whenChips'), 'chip', null, 'when', v => {
+  const inp = $('whenInput'); inp.style.display = v === 'earlier' ? 'block' : 'none';
+  if (v === 'earlier' && !inp.value) {
+    const d = new Date(Date.now() - 3600e3); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    inp.value = d.toISOString().slice(0,16);
+  }
+});
+
+// ---- телефон: +375 (29) 123-45-67
+function phoneDigits(v){
+  let d = v.replace(/\D/g,'');
+  if (d.startsWith('80')) d = '375' + d.slice(2);
+  return d;
+}
+function formatPhone(v){
+  const d = phoneDigits(v);
+  if (!d.startsWith('375')) return '+' + d;
+  const r = d.slice(3, 12);
+  let s = '+375';
+  if (r.length) s += ' (' + r.slice(0,2);
+  if (r.length >= 2) s += ')';
+  if (r.length > 2) s += ' ' + r.slice(2,5);
+  if (r.length > 5) s += '-' + r.slice(5,7);
+  if (r.length > 7) s += '-' + r.slice(7,9);
+  return s;
+}
+$('phone').addEventListener('input', e => {
+  const atEnd = e.target.selectionStart === e.target.value.length;
+  const f = formatPhone(e.target.value);
+  if (atEnd && f !== e.target.value) e.target.value = f;
+  $('e-phone').classList.remove('on');
+});
+function phoneValid(v){
+  const d = phoneDigits(v);
+  return d.startsWith('375') ? d.length === 12 : d.length >= 10 && d.length <= 15;
+}
+
+// ---- файлы
+$('addFile').onclick = () => $('fileInput').click();
+$('fileInput').onchange = e => { [...e.target.files].forEach(addFile); e.target.value = ''; renderFiles(); };
+let fileMsg = '';
+function addFile(f){
+  const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/');
+  if (!isVid && !isImg) return;
+  if (isImg && state.files.filter(x => x.kind==='img').length >= CONFIG.maxPhotos) { fileMsg = `Можно приложить до ${CONFIG.maxPhotos} фото`; return; }
+  if (isVid && state.files.some(x => x.kind==='vid')) { fileMsg = 'Можно приложить одно видео'; return; }
+  state.files.push({ file:f, kind: isVid ? 'vid' : 'img', url: URL.createObjectURL(f) });
+}
+function renderFiles(){
+  const vid = state.files.find(x => x.kind==='vid');
+  let h = fileMsg || 'Например, экран терминала. До 3 фото и одно короткое видео.';
+  if (vid && vid.file.size > CONFIG.maxVideoMB*1048576) h = 'Видео большое — после отправки заявки предложим переслать его в Viber.';
+  $('fileHint').textContent = h; fileMsg = '';
+  $('files').innerHTML = state.files.map((x,i) => `<div class="thumb">${x.kind==='img'
+      ? `<img src="${x.url}" alt="">` : `<video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><span class="tag">видео</span>`}
+      <button type="button" data-i="${i}" aria-label="Удалить">×</button></div>`).join('');
+  $('files').querySelectorAll('button').forEach(b => b.onclick = () => {
+    URL.revokeObjectURL(state.files[b.dataset.i].url); state.files.splice(+b.dataset.i,1); renderFiles();
+  });
+}
+function compressImage(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+const readB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
+
+// ---- отправка
+const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  let ok = true;
+  if (!state.cat)  { $('e-cat').classList.add('on');  ok = false; }
+  if (!state.post) { $('e-post').classList.add('on'); ok = false; }
+  if (!phoneValid($('phone').value)) { $('e-phone').classList.add('on'); ok = false; }
+  if (!ok) { document.querySelector('.err.on').scrollIntoView({behavior:'smooth', block:'center'}); return; }
+
+  const btn = $('submit'); btn.disabled = true; btn.textContent = 'Готовим файлы…'; $('e-send').classList.remove('on');
+  const when = state.when === 'now'
+    ? `только что (${fmt(new Date())})`
+    : ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше');
+
+  const files = []; state.bigVideo = false;
+  for (const x of state.files) {
+    try {
+      if (x.kind === 'img') {
+        try { files.push({ name:'photo.jpg', mime:'image/jpeg', data: await compressImage(x.file) }); }
+        catch(_) { if (x.file.size < 10*1048576) files.push({ name: x.file.name || 'photo', mime: x.file.type, data: await readB64(x.file) }); }
+      } else if (x.file.size <= CONFIG.maxVideoMB*1048576) {
+        files.push({ name: x.file.name || 'video.mp4', mime: x.file.type || 'video/mp4', data: await readB64(x.file) });
+      } else state.bigVideo = true;
+    } catch(_) {}
+  }
+
+  const d = phoneDigits($('phone').value);
+  send({
+    post: state.post, category: state.cat, when,
+    amount: $('amount').value.trim(), payment: state.pay || '',
+    plate: $('plate').value.trim().toUpperCase(), comment: $('comment').value.trim(),
+    phone: '+' + d, contact: state.contact,
+    files, bigVideo: state.bigVideo, website: $('website').value
+  });
+  btn.textContent = 'Отправляем…';
+};
+
+function send(payload){
+  const bar = $('progress'), fill = bar.querySelector('i'); bar.classList.add('on'); fill.style.width = '3%';
+  if (!CONFIG.scriptUrl) { // демо-режим
+    let p = 0; const t = setInterval(() => { p += 20; fill.style.width = p + '%'; if (p >= 100) { clearInterval(t); done('ДЕМО', payload); } }, 150);
+    return;
+  }
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', CONFIG.scriptUrl);
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+  xhr.timeout = 180000;
+  xhr.upload.onprogress = ev => { if (ev.lengthComputable) fill.style.width = Math.max(3, Math.round(ev.loaded/ev.total*95)) + '%'; };
+  xhr.onload = () => { let r = {}; try { r = JSON.parse(xhr.responseText); } catch(_) {} r.ok ? done(r.id, payload) : fail(); };
+  xhr.onerror = xhr.ontimeout = fail;
+  xhr.send(JSON.stringify(payload));
+}
+function done(id, p){
+  $('progress').querySelector('i').style.width = '100%';
+  const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'Telegram':'напишем в Telegram' }[p.contact] || 'свяжемся';
+  $('doneText').innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <span style="white-space:nowrap">${formatPhone(p.phone)}</span>.`;
+  $('doneNum').innerHTML = `Номер заявки: <b>#${id}</b>`;
+  $('vidNote').hidden = !state.bigVideo;
+  go('s-done');
+}
+function fail(){
+  const btn = $('submit'); btn.disabled = false; btn.textContent = 'Отправить ещё раз';
+  $('progress').classList.remove('on');
+  $('e-send').innerHTML = `Не получилось отправить — проверьте интернет и попробуйте ещё раз. Или ` +
+    (inHours() ? `<a href="tel:${CONFIG.phone}">позвоните нам</a>.` : `<a href="${viberHref}">напишите нам в Viber</a>.`);
+  $('e-send').classList.add('on');
+}
+</script>
+</body>
+</html>
