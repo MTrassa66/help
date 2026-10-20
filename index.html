@@ -16,6 +16,7 @@
     --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
   html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font)}
   .wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px}
   header{margin:4px 0 22px}
@@ -133,6 +134,11 @@
   .done .num b{color:var(--ink);font-size:18px}
   .note{background:#fff7e6;border-radius:14px;padding:14px;margin-top:16px;text-align:left;font-size:15px}
   .note .row2{margin-top:10px}
+  .upl{margin-top:16px;text-align:left}
+  .upl .progress{margin-top:0}
+  .upl.fin .progress i{background:var(--green)}
+  .done .ok.bad{background:var(--red-bg);color:var(--red);font-weight:700}
+  .done .lead a{color:var(--blue);font-weight:600;text-decoration:none}
 </style>
 </head>
 <body>
@@ -184,6 +190,7 @@
       <div class="card">
         <div class="opts" id="cats"></div>
         <div class="err" id="e-cat">Выберите, что случилось</div>
+        <div class="err" id="e-water">Отметьте, чего не было</div>
         <div class="err" id="e-other">Опишите проблему текстом или запишите голосовое</div>
       </div>
 
@@ -263,10 +270,11 @@
   <!-- ЭКРАН 3 -->
   <section class="screen" id="s-done">
     <div class="card done">
-      <div class="ok">✓</div>
-      <h2>Заявка принята</h2>
+      <div class="ok" id="doneIco">✓</div>
+      <h2 id="doneTitle">Заявка принята</h2>
       <p class="lead" style="margin:0" id="doneText"></p>
-      <div class="num" id="doneNum"></div>
+      <div class="num" id="doneNum" hidden></div>
+      <div class="upl" id="upl" hidden><div class="progress on"><i></i></div><div class="hint" id="uplText"></div></div>
       <div class="note" id="doneNote" hidden>
         <span id="doneNoteText"></span>
         <div class="row2">
@@ -274,6 +282,7 @@
           <a class="btn ghost" id="noteWa" target="_blank" rel="noopener">WhatsApp</a>
         </div>
       </div>
+      <button class="btn red" type="button" id="retryBtn" hidden style="margin-top:18px">Отправить ещё раз</button>
     </div>
   </section>
 </div>
@@ -297,17 +306,19 @@ const CONFIG = {
   categories: [
     'Терминал не зачислил деньги',
     'Не включилась программа',
-    'Нет воды, пены или воска',
+    'Нет воды, пены или воска',     // при выборе открывается выбор: вода / пена / воск
     'Слабый напор',
     'Пылесос не работает',
     'Другое'
-  ]
+  ],
+  supplies: { 'Вода':'воды', 'Пена':'пены', 'Воск':'воска' }   // варианты для «Нет воды, пены или воска»
 };
 /* =========================================================== */
 
 const $ = id => document.getElementById(id);
 const OTHER = 'Другое';
-const state = { post:'', cat:null, when:'now', pay:null, contact:'Звонок', files:[], voice:null };
+const WATER = 'Нет воды, пены или воска';
+const state = { post:'', cat:null, when:'now', pay:null, contact:'Звонок', files:[], voice:null, supplies:[] };
 
 // пост берётся из ссылки QR: ?post=3 (клиенту не показывается)
 const qp = new URLSearchParams(location.search).get('post');
@@ -340,7 +351,12 @@ $('altContacts').innerHTML = 'Удобнее напрямую? ' + alt.join('');
 // ---- навигация
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); scrollTo(0,0); }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
-$('btnHelp').onclick = () => go('s-form');
+// «будим» скрипт Google, пока клиент заполняет форму — первая отправка быстрее
+let warmed = false;
+$('btnHelp').onclick = () => {
+  go('s-form');
+  if (CONFIG.scriptUrl && !warmed) { warmed = true; fetch(CONFIG.scriptUrl + '?ping=1', { mode:'no-cors' }).catch(() => {}); }
+};
 
 // ---- группы выбора
 function group(container, cls, items, key, onPick){
@@ -355,9 +371,36 @@ function group(container, cls, items, key, onPick){
 
 // категории + выезжающая панель «Другое»
 group($('cats'), 'opt', CONFIG.categories, 'cat', v => {
-  $('e-cat').classList.remove('on'); $('e-other').classList.remove('on');
+  ['e-cat','e-other','e-water'].forEach(id => $(id).classList.remove('on'));
   setOther(v === OTHER);
+  setWater(v === WATER);
 });
+
+// панель «Чего не было?» под пунктом «Нет воды, пены или воска»
+const waterSlide = document.createElement('div');
+waterSlide.className = 'slide';
+waterSlide.innerHTML = '<div><div class="other-inner"><span class="t">Чего не было? <i>— можно несколько</i></span>' +
+  '<div class="chips eq" id="supplies">' +
+  Object.keys(CONFIG.supplies).map(v => `<button type="button" class="chip" data-v="${v}">${v}</button>`).join('') +
+  '</div></div></div>';
+const waterBtn = [...$('cats').querySelectorAll('.opt')].find(b => b.dataset.v === WATER);
+if (waterBtn) waterBtn.after(waterSlide);
+$('supplies').querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  c.classList.toggle('on');
+  state.supplies = [...$('supplies').querySelectorAll('.chip.on')].map(x => x.dataset.v);
+  $('e-water').classList.remove('on');
+});
+function setWater(on){
+  if (waterSlide.classList.contains('on') === on) return;
+  waterSlide.classList.toggle('on', on);
+  if (on) setTimeout(() => waterSlide.scrollIntoView({behavior:'smooth', block:'nearest'}), 300);
+}
+// «Нет пены и воска»
+function categoryText(){
+  if (state.cat !== WATER || !state.supplies.length) return state.cat;
+  const w = state.supplies.map(v => CONFIG.supplies[v]);
+  return 'Нет ' + (w.length > 1 ? w.slice(0, -1).join(', ') + ' и ' + w[w.length - 1] : w[0]);
+}
 const slide = document.createElement('div');
 slide.className = 'slide'; slide.id = 'otherSlide';
 slide.innerHTML = '<div><div class="other-inner"><span class="t">Опишите, что случилось</span><div id="otherSlot"></div></div></div>';
@@ -501,7 +544,9 @@ $('fileInput').onchange = e => {
     const count = state.files.filter(x => x.kind === kind).length;
     if (kind === 'img' && count >= CONFIG.maxPhotos) { msg = `Можно приложить до ${CONFIG.maxPhotos} фото.`; return; }
     if (kind === 'vid' && count >= CONFIG.maxVideos) { msg = `Можно приложить до ${CONFIG.maxVideos} видео.`; return; }
-    state.files.push({ file:f, kind, big: isVid && f.size > CONFIG.maxVideoMB*MB, url: URL.createObjectURL(f) });
+    const item = { file:f, kind, big: isVid && f.size > CONFIG.maxVideoMB*MB, url: URL.createObjectURL(f) };
+    if (kind === 'img') item.prep = compressImage(f).catch(() => null);
+    state.files.push(item);
   });
   e.target.value = ''; renderFiles(msg);
 };
@@ -524,10 +569,10 @@ function compressImage(file){
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
       const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-      res(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
+      res(c.toDataURL('image/jpeg', 0.78).split(',')[1]);
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(); };
     img.src = url;
@@ -565,103 +610,139 @@ function demoPost(body, onProgress){
   return new Promise(res => { let p = 0; const t = setInterval(() => { p += .25; onProgress && onProgress(Math.min(p,1)); if (p >= 1) { clearInterval(t); res({ ok:true, id:'ДЕМО' }); } }, 80); });
 }
 
-let sending = false;
+let sending = false, uploading = false;
+window.addEventListener('beforeunload', e => { if (uploading) { e.preventDefault(); e.returnValue = ''; } });
+
 $('form').onsubmit = async e => {
   e.preventDefault();
   if (sending) return;
   await finishRecording();
   let ok = true;
   if (!state.cat) { $('e-cat').classList.add('on'); ok = false; }
+  if (state.cat === WATER && !state.supplies.length) { $('e-water').classList.add('on'); ok = false; }
   if (state.cat === OTHER && !$('comment').value.trim() && !state.voice) { $('e-other').classList.add('on'); ok = false; }
   if (!phoneValid($('phone').value)) { $('e-phone').classList.add('on'); ok = false; }
   if (!ok) { document.querySelector('.err.on').scrollIntoView({behavior:'smooth', block:'center'}); return; }
 
   sending = true;
-  const btn = $('submit'); btn.disabled = true; btn.textContent = 'Готовим файлы…'; $('e-send').classList.remove('on');
-  const bar = $('progress'), fill = bar.querySelector('i'); bar.classList.add('on'); fill.style.width = '2%';
-  const send = CONFIG.scriptUrl ? postRetry : demoPost;
+  const job = await buildJob();
+  showDone(job);   // экран подтверждения — сразу, без ожидания сервера
+  runJob(job);     // отправка идёт в фоне
+};
 
-  // 1. готовим вложения
-  const photos = [], videos = [], skipped = [];
+async function buildJob(){
+  // фото уже сжаты в момент выбора — здесь только собираем
+  const photos = [], videos = [];
+  let skipped = 0;
   for (const x of state.files) {
     if (x.kind === 'img') {
-      try { photos.push({ name:'photo.jpg', mime:'image/jpeg', data: await compressImage(x.file) }); }
-      catch(_) {
-        if (x.file.size <= 15*MB) photos.push({ name: x.file.name || 'photo.heic', mime: x.file.type || 'image/heic', data: await readB64(x.file) });
-        else skipped.push('фото');
-      }
-    } else if (x.big) skipped.push('видео');
+      const data = await x.prep;
+      if (data) photos.push({ name:'photo.jpg', mime:'image/jpeg', data });
+      else if (x.file.size <= 15*MB) photos.push({ name: x.file.name || 'photo.heic', mime: x.file.type || 'image/heic', data: await readB64(x.file) });
+      else skipped++;
+    } else if (x.big) skipped++;
     else videos.push(x);
   }
-
-  const d = phoneDigits($('phone').value);
   const payload = {
-    action:'create', post: state.post, category: state.cat,
+    action:'create', post: state.post, category: categoryText(),
     when: state.when === 'now' ? `только что (${fmt(new Date())})` : ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше'),
     amount: $('amount').value.trim(), payment: state.pay || '',
     plate: $('plate').value.trim().toUpperCase(), comment: $('comment').value.trim(),
-    phone: '+' + d, contact: state.contact, promo: $('promo').checked,
-    photos: photos.length, videos: videos.length, voice: !!state.voice, skipped: skipped.length,
+    phone: '+' + phoneDigits($('phone').value), contact: state.contact, promo: $('promo').checked,
+    photos: photos.length, videos: videos.length, voice: !!state.voice, skipped,
     website: $('website').value
   };
-
-  // 2. шаги отправки вложений (вес — примерный размер)
+  // мелкое — первым, видео — последним
   const steps = [];
+  const voice = state.voice;
+  if (voice) steps.push({ kind:'voice', weight: voice.blob.size * 1.34 + 20000,
+    get: async () => [{ name: voice.name, mime: voice.type, data: await readB64(voice.blob) }] });
   for (let i = 0; i < photos.length; i += 10) {
     const part = photos.slice(i, i + 10);
-    steps.push({ kind:'photo', weight: part.reduce((s,p) => s + p.data.length, 0), get: async () => part });
+    steps.push({ kind:'photo', weight: part.reduce((s,p) => s + p.data.length, 0) + 20000, get: async () => part });
   }
-  videos.forEach(v => steps.push({ kind:'video', weight: v.file.size * 1.34,
+  videos.forEach(v => steps.push({ kind:'video', weight: v.file.size * 1.34 + 20000,
     get: async () => [{ name: v.file.name || 'video.mp4', mime: v.file.type || 'video/mp4', data: await readB64(v.file) }] }));
-  if (state.voice) steps.push({ kind:'voice', weight: state.voice.blob.size * 1.34,
-    get: async () => [{ name: state.voice.name, mime: state.voice.type, data: await readB64(state.voice.blob) }] });
+  return { payload, steps, skipped };
+}
 
-  const total = 3000 + steps.reduce((s,x) => s + x.weight, 0);
-  let doneW = 0;
-  const setP = (w, frac) => fill.style.width = Math.max(2, Math.round((doneW + w*frac) / total * 97)) + '%';
-
-  // 3. создаём заявку
-  btn.textContent = 'Отправляем…';
-  let id;
-  try { id = (await send(JSON.stringify(payload), f => setP(3000, f))).id; }
-  catch(_) { sending = false; return fail(); }
-  doneW += 3000;
-
-  // 4. вложения — отдельными запросами, чтобы большой файл не сорвал всю заявку
-  let failed = 0, n = 0;
-  for (const s of steps) {
-    n++; btn.textContent = steps.length > 1 ? `Загружаем файлы: ${n} из ${steps.length}` : 'Загружаем файл…';
-    try {
-      const files = await s.get();
-      await send(JSON.stringify({ action:'files', id, kind: s.kind, files }), f => setP(s.weight, f));
-    } catch(_) { failed++; }
-    doneW += s.weight; setP(0, 0);
-  }
-  done(id, payload, skipped.length, failed);
-};
-
-function done(id, p, skipped, failed){
-  $('progress').querySelector('i').style.width = '100%';
+function showDone(job){
+  const p = job.payload;
   const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp', 'Telegram':'напишем в Telegram' }[p.contact] || 'свяжемся';
+  $('doneIco').className = 'ok'; $('doneIco').textContent = '✓';
+  $('doneTitle').textContent = 'Заявка принята';
   $('doneText').innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <span style="white-space:nowrap">${formatPhone(p.phone)}</span>.`;
-  $('doneNum').innerHTML = `Номер заявки: <b>#${id}</b>`;
-  if (skipped || failed) {
-    $('doneNoteText').textContent = (skipped && !failed
-      ? 'Видео оказалось слишком большим для формы.'
-      : 'Не все файлы успели загрузиться.') + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
-    $('noteViber').href = viberHref;
-    $('noteWa').href = waHref(`Заявка #${id}`);
-    $('noteViber').hidden = !CONFIG.viber; $('noteWa').hidden = !CONFIG.whatsapp;
-    $('doneNote').hidden = false;
-  }
+  $('doneNum').hidden = true; $('doneNote').hidden = true; $('retryBtn').hidden = true;
   go('s-done');
 }
-function fail(){
-  const btn = $('submit'); btn.disabled = false; btn.textContent = 'Отправить ещё раз';
-  $('progress').classList.remove('on');
-  $('e-send').innerHTML = `Не получилось отправить — проверьте интернет и попробуйте ещё раз. Или ` +
+
+function sendFailed(job){
+  $('doneIco').className = 'ok bad'; $('doneIco').textContent = '!';
+  $('doneTitle').textContent = 'Заявка не отправилась';
+  $('doneText').innerHTML = 'Похоже, пропал интернет. Всё, что вы заполнили, сохранено — нажмите «Отправить ещё раз». Или ' +
     (inHours() ? `<a href="tel:${CONFIG.phone}">позвоните нам</a>.` : `<a href="${waHref()}" target="_blank" rel="noopener">напишите в WhatsApp</a>.`);
-  $('e-send').classList.add('on');
+  $('upl').hidden = true;
+  $('retryBtn').hidden = false;
+  $('retryBtn').onclick = () => { showDone(job); runJob(job); };
+}
+
+async function pool(items, n, fn){
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]);
+  }));
+}
+
+async function runJob(job){
+  uploading = true;
+  const send = CONFIG.scriptUrl ? postRetry : demoPost;
+  const box = $('upl'), fill = box.querySelector('i'), txt = $('uplText');
+  const head = job.steps.length ? 25 : 100;          // доля полоски на саму заявку
+  box.hidden = false; box.classList.remove('fin');
+  txt.textContent = 'Доставляем заявку…';
+  fill.style.width = '4%';
+
+  let id;
+  try { id = (await send(JSON.stringify(job.payload), f => fill.style.width = Math.max(4, Math.round(f * head)) + '%')).id; }
+  catch(_) { uploading = false; return sendFailed(job); }
+  $('doneNum').innerHTML = `Номер заявки: <b>#${id}</b>`; $('doneNum').hidden = false;
+  if (job.skipped) showNote(id, job.skipped, 0);
+
+  if (!job.steps.length) {
+    uploading = false; box.classList.add('fin'); fill.style.width = '100%'; txt.textContent = 'Заявка доставлена ✓';
+    return;
+  }
+
+  // вложения — параллельно, по 3 одновременно
+  const total = job.steps.reduce((s,x) => s + x.weight, 0);
+  const live = new Map();
+  let doneW = 0, finished = 0, failed = 0;
+  const paint = () => {
+    let w = doneW; live.forEach((f, s) => w += s.weight * f);
+    fill.style.width = Math.round(head + (100 - head) * w / total) + '%';
+    txt.textContent = `Заявка доставлена. Загружаем вложения: ${finished} из ${job.steps.length} — не закрывайте страницу.`;
+  };
+  paint();
+  await pool(job.steps, 3, async s => {
+    try {
+      const files = await s.get();
+      await send(JSON.stringify({ action:'files', id, kind: s.kind, files }), f => { live.set(s, f); paint(); });
+    } catch(_) { failed++; }
+    live.delete(s); doneW += s.weight; finished++; paint();
+  });
+  uploading = false;
+  if (failed) { box.hidden = true; showNote(id, job.skipped, failed); }
+  else { box.classList.add('fin'); fill.style.width = '100%'; txt.textContent = 'Заявка и все вложения доставлены ✓'; }
+}
+
+function showNote(id, skipped, failed){
+  $('doneNoteText').textContent = (skipped && !failed
+    ? 'Видео оказалось слишком большим для формы.'
+    : 'Не все файлы успели загрузиться.') + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
+  $('noteViber').href = viberHref;
+  $('noteWa').href = waHref(`Заявка #${id}`);
+  $('noteViber').hidden = !CONFIG.viber; $('noteWa').hidden = !CONFIG.whatsapp;
+  $('doneNote').hidden = false;
 }
 </script>
 </body>
