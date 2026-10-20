@@ -7,6 +7,13 @@
 <meta name="theme-color" content="#f2f5f9">
 <meta name="robots" content="noindex">
 <title>Мойка · Минская 10А</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Мойка самообслуживания, Витебск, ул. Минская 10А: отзыв или помощь с проблемой.">
+<!-- соединение с Google открываем заранее: заявка уйдёт без лишних рукопожатий -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="dns-prefetch" href="https://script.google.com">
+<link rel="dns-prefetch" href="https://script.googleusercontent.com">
 <style>
   :root{
     --bg:#f2f5f9; --card:#fff; --ink:#0f172a; --muted:#5b6678; --line:#dfe5ee;
@@ -23,8 +30,11 @@
   .brand{font-weight:700;font-size:15px}
   .brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
   h1{font-size:27px;line-height:1.2;margin:0 0 18px}
-  h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+  h2,h1.h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+  h1:focus,h2:focus{outline:none}
   .screen{display:none}.screen.on{display:block}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+  :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 
   /* экран выбора */
   .choice{border-radius:var(--radius);padding:20px;margin-bottom:14px}
@@ -46,74 +56,81 @@
   .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
   .btn[disabled]{opacity:.6;cursor:default}
   .alt{text-align:center;color:var(--muted);font-size:14px;margin-top:22px}
-  .alt a{display:inline-block;color:var(--blue);text-decoration:none;font-weight:600;margin:4px 6px;white-space:nowrap}
+  .alt a{display:inline-block;color:var(--blue);text-decoration:none;font-weight:600;margin:4px 6px;padding:6px 0;white-space:nowrap}
 
   /* форма */
-  .card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;margin:0 0 14px;border:0;min-width:0}
   .back{background:none;border:0;color:var(--blue);font:600 15px var(--font);padding:6px 0;margin-bottom:10px;cursor:pointer}
   .lead{color:var(--muted);margin:0 0 18px;font-size:15px}
-  .t{display:block;font-weight:700;margin:0 0 10px;font-size:15px}
+  .t{display:block;font-weight:700;margin:0 0 10px;font-size:15px;padding:0}
   .t i{font-style:normal;font-weight:400;color:var(--muted)}
   .field{margin-bottom:20px}.field:last-child{margin-bottom:0}
+  fieldset{border:0;margin:0;padding:0;min-width:0}
+  fieldset > legend.t{float:left;width:100%}
+  fieldset > legend.t + *{clear:both}
 
+  /* варианты «Что случилось» — нативные radio */
   .opts{display:grid;gap:8px}
-  .opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;
+  .opt{display:flex;align-items:center;gap:12px;width:100%;border:1.5px solid var(--line);background:#fff;
     border-radius:14px;padding:13px 14px;font:500 16px/1.3 var(--font);color:var(--ink);cursor:pointer;min-height:52px}
   .opt::before{content:"";flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #b9c3d2;background:#fff}
-  .opt.on{border-color:var(--ink);background:#f6f8fb}
-  .opt.on::before{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 5px,#fff 6px)}
+  .vh:checked + .opt{border-color:var(--ink);background:#f6f8fb}
+  .vh:checked + .opt::before{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 5px,#fff 6px)}
+  .vh:focus-visible + .opt,.vh:focus-visible + .chip{outline:3px solid var(--blue);outline-offset:2px}
 
-  /* выезжающая панель «Другое» */
+  /* выезжающие панели «Другое» и «Нет воды, пены или воска» */
   .slide{display:grid;grid-template-rows:0fr;margin-top:-8px;transition:grid-template-rows .28s ease,margin-top .28s ease}
   .slide.on{grid-template-rows:1fr;margin-top:0}
   .slide>div{overflow:hidden;min-height:0}
   .other-inner{border:1.5px solid var(--ink);border-radius:14px;padding:14px;background:#f6f8fb}
   .other-inner .t{margin-bottom:8px}
 
+  /* «чипы» — нативные radio/checkbox */
   .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;
-    font:500 15px var(--font);color:var(--ink);cursor:pointer;min-height:46px}
-  .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
   .chips.eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
+  .chips > label{display:block;position:relative}
+  .chip{display:flex;align-items:center;justify-content:center;text-align:center;width:100%;border:1.5px solid var(--line);
+    background:#fff;border-radius:12px;padding:10px 14px;font:500 15px var(--font);color:var(--ink);cursor:pointer;min-height:46px}
+  .vh:checked + .chip{border-color:var(--ink);background:var(--ink);color:#fff}
 
   input[type=text],input[type=tel],input[type=number],input[type=datetime-local],textarea{
     width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:16px var(--font);
     background:#fff;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
   input:focus,textarea:focus{border-color:var(--ink)}
+  input:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+  [aria-invalid="true"]{border-color:var(--red) !important}
   textarea{display:block;min-height:88px;resize:vertical}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .hint{color:var(--muted);font-size:13px;margin-top:8px}
-  .err{color:var(--red);font-size:14px;margin-top:8px;display:none}
-  .err.on{display:block}
+  .err{color:var(--red);font-size:14px;margin-top:8px}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  #whenInput{margin-top:10px}
 
   /* кнопки вложений */
   .addbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;
     border:1.5px dashed #b9c3d2;background:#fff;color:var(--ink);border-radius:14px;
     font:600 15px var(--font);cursor:pointer;margin-top:10px}
-  .addbtn[hidden]{display:none}
   .ico{width:20px;height:20px;flex:none}
 
   /* голосовое */
-  .rec{display:none;align-items:center;gap:12px;margin-top:10px;background:var(--red-bg);border-radius:14px;padding:8px 8px 8px 14px}
-  .rec.on{display:flex}
+  .rec{display:flex;align-items:center;gap:12px;margin-top:10px;background:var(--red-bg);border-radius:14px;padding:8px 8px 8px 14px}
   .rec .dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
   .rec .time{flex:1;font-weight:600;font-variant-numeric:tabular-nums}
   .rec button{border:0;background:var(--red);color:#fff;border-radius:10px;padding:10px 14px;font:600 15px var(--font);cursor:pointer}
   @keyframes pulse{50%{opacity:.25}}
-  .vprev{display:none;align-items:center;gap:8px;margin-top:10px;background:#f6f8fb;border:1.5px solid var(--line);
+  .vprev{display:flex;align-items:center;gap:8px;margin-top:10px;background:#f6f8fb;border:1.5px solid var(--line);
     border-radius:14px;padding:6px 6px 6px 10px}
-  .vprev.on{display:flex}
   .vprev audio{flex:1;min-width:0;height:40px}
   .vprev button{flex:none;border:0;background:none;color:var(--red);font:600 14px var(--font);padding:8px;cursor:pointer}
 
-  .files{display:flex;flex-wrap:wrap;gap:8px}
+  .files{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
   .files:not(:empty){margin-top:10px}
   .thumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:#e5e9f0;
     display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
   .thumb img,.thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .thumb .tag{position:absolute;left:4px;bottom:4px;background:rgba(15,23,42,.75);color:#fff;font-size:11px;border-radius:6px;padding:1px 5px}
   .thumb .tag.big{background:var(--red)}
+  .thumb .tag{max-width:70px;line-height:1.25}
   .thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;
     background:rgba(15,23,42,.75);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
 
@@ -121,8 +138,7 @@
   .check input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--ink)}
   .check small{display:block;color:var(--muted);font-size:13px}
 
-  .progress{height:6px;background:#e5e9f0;border-radius:3px;overflow:hidden;margin-top:12px;display:none}
-  .progress.on{display:block}
+  .progress{height:6px;background:#e5e9f0;border-radius:3px;overflow:hidden}
   .progress i{display:block;height:100%;width:0;background:var(--red);transition:width .2s}
   .privacy{color:var(--muted);font-size:13px;text-align:center;margin-top:12px}
 
@@ -130,19 +146,32 @@
   .done{text-align:center;padding:30px 20px}
   .done .ok{width:64px;height:64px;border-radius:50%;background:var(--green-bg);color:var(--green);
     display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px}
+  .done .ok.bad{background:var(--red-bg);color:var(--red);font-weight:700}
+  .done .ok.wait{background:none;border:5px solid var(--green-bg);border-top-color:var(--green);animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .done .lead{margin:0}
+  .done .lead.warn{color:var(--ink);font-weight:600}
+  .done .lead a{color:var(--blue);font-weight:600;text-decoration:none}
   .done .num{display:inline-block;margin:14px 0 4px;background:var(--bg);border-radius:12px;padding:8px 14px;font-size:15px;color:var(--muted)}
   .done .num b{color:var(--ink);font-size:18px}
   .note{background:#fff7e6;border-radius:14px;padding:14px;margin-top:16px;text-align:left;font-size:15px}
   .note .row2{margin-top:10px}
   .upl{margin-top:16px;text-align:left}
-  .upl .progress{margin-top:0}
   .upl.fin .progress i{background:var(--green)}
-  .done .ok.bad{background:var(--red-bg);color:var(--red);font-weight:700}
-  .done .lead a{color:var(--blue);font-weight:600;text-decoration:none}
+  #retryBtn{margin-top:18px}
+  .pend{background:#fff7e6;border-radius:var(--radius);padding:16px;margin-bottom:18px;font-size:15px}
+  .pend h2{font-size:16px;margin:0 0 4px}
+  .pend .row2{margin-top:12px}
+
+  @media (prefers-reduced-motion: reduce){
+    .slide,.progress i{transition:none}
+    .rec .dot{animation:none}
+    .done .ok.wait{animation-duration:2.4s}
+  }
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
   <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -154,9 +183,18 @@
     <div class="brand">Мойка самообслуживания<small>Витебск, ул. Минская 10А</small></div>
   </header>
 
+  <main>
   <!-- ЭКРАН 1 -->
-  <section class="screen on" id="s-choice">
-    <h1>Как прошла мойка?</h1>
+  <section class="screen on" id="s-choice" aria-labelledby="h-choice">
+    <div class="pend" id="pendBox" role="region" aria-labelledby="pendTitle" hidden>
+      <h2 id="pendTitle">Возможно, ваша заявка не отправилась</h2>
+      <span id="pendText"></span>
+      <div class="row2">
+        <button class="btn red" type="button" data-act="pend-send">Отправить</button>
+        <button class="btn ghost" type="button" data-act="pend-drop">Удалить</button>
+      </div>
+    </div>
+    <h1 id="h-choice" tabindex="-1">Как прошла мойка?</h1>
 
     <div class="choice good">
       <span class="ttl">Оставить отзыв</span>
@@ -167,7 +205,7 @@
       </div>
     </div>
 
-    <button class="choice help" id="btnHelp" type="button">
+    <button class="choice help" type="button" data-act="help">
       <span class="go">
         <span>
           <span class="ttl">Нужна помощь</span>
@@ -181,27 +219,28 @@
   </section>
 
   <!-- ЭКРАН 2 -->
-  <section class="screen" id="s-form">
-    <button class="back" type="button" data-go="s-choice">← Назад</button>
-    <h2>Что случилось?</h2>
+  <section class="screen" id="s-form" aria-labelledby="h-form">
+    <button class="back" type="button" data-act="back">← Назад</button>
+    <h1 class="h2" id="h-form" tabindex="-1">Что случилось?</h1>
     <p class="lead">Проверим записи с камер и свяжемся с вами <span class="reply-short"></span>.</p>
 
     <form id="form" novalidate>
-      <div class="card">
+      <fieldset class="card" id="catsBox">
+        <legend class="vh">Что случилось</legend>
         <div class="opts" id="cats"></div>
-        <div class="err" id="e-cat">Выберите, что случилось</div>
-        <div class="err" id="e-water">Отметьте, чего не было</div>
-        <div class="err" id="e-other">Опишите проблему текстом или запишите голосовое</div>
-      </div>
+        <div class="err" id="e-cat" hidden>Выберите, что случилось</div>
+        <div class="err" id="e-water" hidden>Отметьте, чего не было</div>
+        <div class="err" id="e-other" hidden>Опишите проблему текстом или запишите голосовое</div>
+      </fieldset>
 
-      <div class="card">
-        <span class="t">Когда это было</span>
-        <div class="chips eq" id="whenChips">
-          <button type="button" class="chip on" data-v="now">Только что</button>
-          <button type="button" class="chip" data-v="earlier">Раньше</button>
+      <fieldset class="card">
+        <legend class="t">Когда это было</legend>
+        <div class="chips eq">
+          <label><input class="vh" type="radio" name="when" value="now" checked><span class="chip">Только что</span></label>
+          <label><input class="vh" type="radio" name="when" value="earlier"><span class="chip">Раньше</span></label>
         </div>
-        <input type="datetime-local" id="whenInput" style="display:none;margin-top:10px" aria-label="Дата и время">
-      </div>
+        <input type="datetime-local" id="whenInput" aria-label="Дата и время" hidden>
+      </fieldset>
 
       <div class="card">
         <div class="row2 field">
@@ -214,13 +253,13 @@
             <input type="text" id="plate" autocapitalize="characters" autocomplete="off" placeholder="1234 AB-2">
           </div>
         </div>
-        <div class="field">
-          <span class="t">Как оплачивали</span>
-          <div class="chips eq" id="pay">
-            <button type="button" class="chip" data-v="Наличные">Наличные</button>
-            <button type="button" class="chip" data-v="Карта / телефон">Карта / телефон</button>
+        <fieldset class="field">
+          <legend class="t">Как оплачивали</legend>
+          <div class="chips eq">
+            <label><input class="vh" type="radio" name="pay" value="Наличные"><span class="chip">Наличные</span></label>
+            <label><input class="vh" type="radio" name="pay" value="Карта / телефон"><span class="chip">Карта / телефон</span></label>
           </div>
-        </div>
+        </fieldset>
       </div>
 
       <!-- подробнее: текст + голосовое + фото/видео -->
@@ -228,29 +267,29 @@
         <span class="t" id="detailsTitle">Подробнее <i>— по желанию</i></span>
         <div id="describeHome">
           <div id="describe">
-            <textarea id="comment" maxlength="2000"></textarea>
-            <button type="button" class="addbtn" id="micBtn"><svg class="ico"><use href="#i-mic"/></svg>Записать голосовое</button>
-            <div class="rec" id="rec"><span class="dot"></span><span class="time" id="recTime">0:00</span><button type="button" id="recStop">Готово</button></div>
-            <div class="vprev" id="vprev"><audio id="vaudio" controls preload="metadata"></audio><button type="button" id="vdel">Удалить</button></div>
-            <div class="hint" id="micHint" hidden></div>
+            <textarea id="comment" maxlength="2000" aria-label="Опишите подробнее" placeholder="Например: внёс 5 рублей, на экране осталось 0"></textarea>
+            <button type="button" class="addbtn" id="micBtn" data-act="mic"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg>Записать голосовое</button>
+            <div class="rec" id="rec" hidden><span class="dot" aria-hidden="true"></span><span class="time" id="recTime" role="timer">0:00</span><button type="button" data-act="rec-stop">Готово</button></div>
+            <div class="vprev" id="vprev" hidden><audio id="vaudio" controls preload="metadata" aria-label="Ваше голосовое сообщение"></audio><button type="button" data-act="voice-del">Удалить</button></div>
+            <div class="hint" id="micHint" role="status" hidden></div>
           </div>
         </div>
-        <button type="button" class="addbtn" id="addFile"><svg class="ico"><use href="#i-cam"/></svg>Добавить фото или видео</button>
+        <button type="button" class="addbtn" data-act="add-file"><svg class="ico" aria-hidden="true"><use href="#i-cam"/></svg>Добавить фото или видео</button>
         <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
-        <div class="files" id="files"></div>
-        <div class="hint" id="fileHint"></div>
+        <ul class="files" id="files" aria-label="Вложения"></ul>
+        <div class="hint" id="fileHint" aria-live="polite"></div>
       </div>
 
       <div class="card">
         <div class="field">
           <label class="t" for="phone">Ваш телефон</label>
           <input type="tel" id="phone" inputmode="tel" autocomplete="tel" value="+375 " placeholder="+375 (29) 123-45-67">
-          <div class="err" id="e-phone">Проверьте номер — по нему мы с вами свяжемся</div>
+          <div class="err" id="e-phone" hidden>Проверьте номер — по нему мы с вами свяжемся</div>
         </div>
-        <div class="field">
-          <span class="t">Как удобнее связаться</span>
+        <fieldset class="field">
+          <legend class="t">Как удобнее связаться</legend>
           <div class="chips eq" id="contact"></div>
-        </div>
+        </fieldset>
         <div class="field">
           <label class="check"><input type="checkbox" id="promo">
             <span>Присылать акции и бонусы мойки<small>Не чаще пары раз в месяц. Отписаться можно в любой момент.</small></span>
@@ -258,38 +297,43 @@
         </div>
       </div>
 
-      <input type="text" name="website" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <input type="text" name="website" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" aria-label="Не заполняйте">
 
       <button class="btn red" id="submit" type="submit">Отправить заявку</button>
-      <div class="progress" id="progress"><i></i></div>
-      <div class="err" id="e-send" style="text-align:center"></div>
       <p class="privacy">Телефон нужен для связи по заявке. Акции присылаем, только если вы отметили галочку.</p>
     </form>
   </section>
 
   <!-- ЭКРАН 3 -->
-  <section class="screen" id="s-done">
+  <section class="screen" id="s-done" aria-labelledby="doneTitle">
     <div class="card done">
-      <div class="ok" id="doneIco">✓</div>
-      <h2 id="doneTitle">Заявка принята</h2>
-      <p class="lead" style="margin:0" id="doneText"></p>
-      <div class="num" id="doneNum" hidden></div>
-      <div class="upl" id="upl" hidden><div class="progress on"><i></i></div><div class="hint" id="uplText"></div></div>
-      <div class="note" id="doneNote" hidden>
+      <div class="ok" id="doneIco" aria-hidden="true">✓</div>
+      <div role="status" aria-live="polite">
+        <h1 class="h2" id="doneTitle" tabindex="-1">Заявка принята</h1>
+        <p class="lead" id="doneText"></p>
+        <div class="num" id="doneNum" hidden></div>
+      </div>
+      <div class="upl" id="upl" hidden>
+        <div class="progress" role="progressbar" aria-label="Загрузка вложений" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uplBar"><i></i></div>
+        <div class="hint" id="uplText" aria-live="polite"></div>
+      </div>
+      <div class="note" id="doneNote" role="alert" hidden>
         <span id="doneNoteText"></span>
         <div class="row2">
           <a class="btn ghost" id="noteViber">Viber</a>
           <a class="btn ghost" id="noteWa" target="_blank" rel="noopener">WhatsApp</a>
         </div>
       </div>
-      <button class="btn red" type="button" id="retryBtn" hidden style="margin-top:18px">Отправить ещё раз</button>
+      <button class="btn red" type="button" id="retryBtn" data-act="retry" hidden>Отправить ещё раз</button>
     </div>
   </section>
+  </main>
 </div>
 
-<script>
+<script type="module">
 /* ======================== НАСТРОЙКИ ======================== */
 const CONFIG = {
+  workerUrl: '',                  // быстрый сервер Cloudflare (пусто — только через Google)
   scriptUrl: 'https://script.google.com/macros/s/AKfycbwsicWQuIhtdmMZP-xylBFHSVZ2mZ3f3ap7YH5zfhYhJoTqKYxwgF1GqTSuWX6wcM27/exec',
   yandexUrl: 'https://yandex.by/maps/-/CXFTm08y',
   googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
@@ -301,7 +345,8 @@ const CONFIG = {
   hours: { from: 8, to: 22 },     // когда отвечаете; вне этих часов номер телефона скрыт
   maxPhotos: 10,                  // защита группы от флуда
   maxVideos: 3,
-  maxVideoMB: 25,                 // технический предел Google + Telegram
+  maxVideoMB: 48,                 // через быстрый сервер (предел Telegram — 50 МБ)
+  maxVideoMBSlow: 25,             // если быстрый сервер недоступен и идём через Google
   maxVoiceSec: 180,
   categories: [
     'Терминал не зачислил деньги',
@@ -315,129 +360,226 @@ const CONFIG = {
 };
 /* =========================================================== */
 
+// ================= 1. УТИЛИТЫ =================
 const $ = id => document.getElementById(id);
+const form = $('form');
+const MB = 1048576;
 const OTHER = 'Другое';
 const WATER = 'Нет воды, пены или воска';
-const state = { post:'', cat:null, when:'now', pay:null, contact:'Звонок', files:[], voice:null, supplies:[] };
+const T0 = performance.now();
+const params = new URLSearchParams(location.search);
+const DEBUG = params.get('debug') === '1';
+const dbg = (...a) => { if (DEBUG) console.log(`[${((performance.now() - T0) / 1000).toFixed(3)}s]`, ...a); };
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
+const digitsOf = v => String(v).replace(/\D/g, '');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 
-// пост берётся из ссылки QR: ?post=3 (клиенту не показывается)
-const qp = new URLSearchParams(location.search).get('post');
-if (qp && /^\d{1,2}$/.test(qp)) state.post = String(+qp);
+function uid(){
+  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (_) {}
+  try { return [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (_) {}
+  return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+const readB64 = blob => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result).split(',')[1]);
+  r.onerror = rej;
+  r.readAsDataURL(blob);
+});
 
-// ---- рабочие часы
+// ================= 2. ПОСТ, ЧАСЫ, ССЫЛКИ =================
+const post = /^\d{1,2}$/.test(params.get('post') || '') ? String(+params.get('post')) : '';   // из QR: ?post=3
+
 function inHours(){
   if (!CONFIG.hours) return true;
   const h = new Date().getHours();
   return h >= CONFIG.hours.from && h < CONFIG.hours.to;
 }
 const replyShort = () => inHours() ? `в течение ${CONFIG.responseMinutes} минут` : `утром, после ${CONFIG.hours.from}:00`;
-document.querySelectorAll('.reply').forEach(el => el.textContent = 'ответим ' + replyShort());
-document.querySelectorAll('.reply-short').forEach(el => el.textContent = replyShort());
+document.querySelectorAll('.reply').forEach(el => { el.textContent = 'ответим ' + replyShort(); });
+document.querySelectorAll('.reply-short').forEach(el => { el.textContent = replyShort(); });
 
-// ---- ссылки
 $('lnkYandex').href = CONFIG.yandexUrl;
 $('lnkGoogle').href = CONFIG.googleUrl;
-const digitsOf = v => String(v).replace(/\D/g,'');
 const viberHref = `viber://chat?number=${encodeURIComponent(CONFIG.viber)}`;
 const waHref = text => `https://wa.me/${digitsOf(CONFIG.whatsapp)}` + (text ? `?text=${encodeURIComponent(text)}` : '');
-const tgHref = CONFIG.telegram ? `https://t.me/${CONFIG.telegram}` : '';
-const alt = [];
-if (inHours()) alt.push(`<a href="tel:${CONFIG.phone}">Позвонить</a>`);
-if (CONFIG.viber) alt.push(`<a href="${viberHref}">Viber</a>`);
-if (CONFIG.whatsapp) alt.push(`<a href="${waHref()}" target="_blank" rel="noopener">WhatsApp</a>`);
-if (tgHref) alt.push(`<a href="${tgHref}" target="_blank" rel="noopener">Telegram</a>`);
-$('altContacts').innerHTML = 'Удобнее напрямую? ' + alt.join('');
+{
+  const alt = [];
+  if (inHours()) alt.push(`<a href="tel:${esc(CONFIG.phone)}">Позвонить</a>`);
+  if (CONFIG.viber) alt.push(`<a href="${esc(viberHref)}">Viber</a>`);
+  if (CONFIG.whatsapp) alt.push(`<a href="${esc(waHref())}" target="_blank" rel="noopener">WhatsApp</a>`);
+  if (CONFIG.telegram) alt.push(`<a href="https://t.me/${esc(CONFIG.telegram)}" target="_blank" rel="noopener">Telegram</a>`);
+  $('altContacts').innerHTML = 'Удобнее напрямую? ' + alt.join('');
+}
 
-// ---- навигация
-function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); scrollTo(0,0); }
-document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
-// «будим» скрипт Google, пока клиент заполняет форму — первая отправка быстрее
-let warmed = false;
-$('btnHelp').onclick = () => {
-  go('s-form');
-  if (CONFIG.scriptUrl && !warmed) { warmed = true; fetch(CONFIG.scriptUrl + '?ping=1', { mode:'no-cors' }).catch(() => {}); }
-};
+// ================= 3. СТАТИСТИКА И ПРОГРЕВ =================
+const SID = (() => {
+  try {
+    let s = sessionStorage.getItem('moika_sid');
+    if (!s) { s = uid().replace(/-/g, '').slice(0, 16); sessionStorage.setItem('moika_sid', s); }
+    return s;
+  } catch (_) { return uid().replace(/-/g, '').slice(0, 16); }
+})();
 
-// ---- группы выбора
-function group(container, cls, items, key, onPick){
-  if (items) container.innerHTML = items.map(v =>
-    `<button type="button" class="${cls}${v===state[key]?' on':''}" data-v="${v}">${v}</button>`).join('');
-  container.querySelectorAll('.' + cls).forEach(c => c.onclick = () => {
-    container.querySelectorAll('.' + cls).forEach(x => x.classList.remove('on'));
-    c.classList.add('on'); state[key] = c.dataset.v;
-    if (onPick) onPick(state[key]);
+// лёгкие анонимные события; ошибки не влияют на форму
+function track(event){
+  try {
+    if (!CONFIG.scriptUrl) return;
+    const body = JSON.stringify({ action:'event', event, post, sid: SID, t: Date.now() });
+    if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.scriptUrl, body)) return;
+    fetch(CONFIG.scriptUrl, { method:'POST', body, keepalive:true, mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' } }).catch(() => {});
+  } catch (_) {}
+}
+function pingGoogle(){
+  if (CONFIG.scriptUrl) fetch(CONFIG.scriptUrl + '?ping=1', { mode:'no-cors' }).catch(() => {});
+}
+
+// быстрый сервер: открываем соединение и сразу узнаём, доступен ли он
+const WORKER = CONFIG.workerUrl ? CONFIG.workerUrl.replace(/\/+$/, '') : '';
+let workerDead = !WORKER;
+if (WORKER) {
+  try {
+    const l = document.createElement('link');
+    l.rel = 'preconnect'; l.href = new URL(WORKER).origin; l.crossOrigin = 'anonymous';
+    document.head.appendChild(l);
+  } catch (_) {}
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  fetch(WORKER, { signal: ctrl.signal })
+    .then(r => { if (!r.ok) throw 0; dbg('Worker доступен'); })
+    .catch(() => { workerDead = true; dbg('Worker недоступен — файлы пойдут через Google'); })
+    .finally(() => clearTimeout(t));
+}
+
+// прогрев Google сразу при загрузке: «open» (раз за сессию) или пустой запрос
+(() => {
+  let first = true;
+  try { first = !sessionStorage.getItem('moika_open'); if (first) sessionStorage.setItem('moika_open', '1'); } catch (_) {}
+  if (first) track('open'); else pingGoogle();
+})();
+// пока вкладка видна — повторный прогрев раз в 4 минуты, не больше 3 раз
+{
+  let left = 3;
+  const timer = setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    pingGoogle();
+    if (--left <= 0) clearInterval(timer);
+  }, 4 * 60 * 1000);
+}
+
+// ================= 4. НАВИГАЦИЯ =================
+function go(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  scrollTo(0, 0);
+  const h = $(id).querySelector('h1[tabindex]');
+  if (h) h.focus({ preventScroll: true });
+}
+
+// ================= 5. ФОРМА: ВАРИАНТЫ =================
+{
+  const radio = (name, value, cls) =>
+    `<label><input class="vh" type="radio" name="${name}" value="${esc(value)}"><span class="${cls}">${esc(value)}</span></label>`;
+  $('cats').innerHTML = CONFIG.categories.map(c => radio('cat', c, 'opt')).join('');
+
+  const contacts = ['Звонок'].concat(CONFIG.viber ? ['Viber'] : [], CONFIG.whatsapp ? ['WhatsApp'] : [], CONFIG.telegram ? ['Telegram'] : []);
+  $('contact').innerHTML = contacts.map(c => radio('contact', c, 'chip')).join('');
+  $('contact').style.gridTemplateColumns = `repeat(${contacts.length <= 3 ? contacts.length : 2},1fr)`;
+  form.querySelector('input[name="contact"]').checked = true;
+}
+
+// выезжающие панели
+function makeSlide(after, inner){
+  const el = document.createElement('div');
+  el.className = 'slide';
+  el.innerHTML = `<div><div class="other-inner">${inner}</div></div>`;
+  after.after(el);
+  return el;
+}
+const catLabel = v => [...form.querySelectorAll('input[name="cat"]')].find(i => i.value === v)?.closest('label');
+const waterSlide = catLabel(WATER) && makeSlide(catLabel(WATER),
+  '<fieldset><legend class="t">Чего не было? <i>— можно несколько</i></legend><div class="chips eq">' +
+  Object.keys(CONFIG.supplies).map(v => `<label><input class="vh" type="checkbox" name="supply" value="${esc(v)}"><span class="chip">${esc(v)}</span></label>`).join('') +
+  '</div></fieldset>');
+const otherSlide = catLabel(OTHER) && makeSlide(catLabel(OTHER), '<span class="t" id="otherTitle">Опишите, что случилось</span><div id="otherSlot"></div>');
+
+// после открытия панели — показать её целиком (ждём окончания анимации, без таймеров)
+function reveal(el){
+  requestAnimationFrame(() => {
+    const anims = el.getAnimations ? el.getAnimations() : [];
+    Promise.all(anims.map(a => a.finished)).catch(() => {})
+      .then(() => el.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' }));
   });
 }
-
-// категории + выезжающая панель «Другое»
-group($('cats'), 'opt', CONFIG.categories, 'cat', v => {
-  ['e-cat','e-other','e-water'].forEach(id => $(id).classList.remove('on'));
-  setOther(v === OTHER);
-  setWater(v === WATER);
-});
-
-// панель «Чего не было?» под пунктом «Нет воды, пены или воска»
-const waterSlide = document.createElement('div');
-waterSlide.className = 'slide';
-waterSlide.innerHTML = '<div><div class="other-inner"><span class="t">Чего не было? <i>— можно несколько</i></span>' +
-  '<div class="chips eq" id="supplies">' +
-  Object.keys(CONFIG.supplies).map(v => `<button type="button" class="chip" data-v="${v}">${v}</button>`).join('') +
-  '</div></div></div>';
-const waterBtn = [...$('cats').querySelectorAll('.opt')].find(b => b.dataset.v === WATER);
-if (waterBtn) waterBtn.after(waterSlide);
-$('supplies').querySelectorAll('.chip').forEach(c => c.onclick = () => {
-  c.classList.toggle('on');
-  state.supplies = [...$('supplies').querySelectorAll('.chip.on')].map(x => x.dataset.v);
-  $('e-water').classList.remove('on');
-});
-function setWater(on){
-  if (waterSlide.classList.contains('on') === on) return;
-  waterSlide.classList.toggle('on', on);
-  if (on) setTimeout(() => waterSlide.scrollIntoView({behavior:'smooth', block:'nearest'}), 300);
+// закрытая панель недоступна ни с клавиатуры, ни для экранного диктора
+function lockSlide(el, on){
+  if ('inert' in el) el.inert = !on;
+  else el.querySelectorAll('input, textarea, button').forEach(c => { c.tabIndex = on ? 0 : -1; });
 }
-// «Нет пены и воска»
-function categoryText(){
-  if (state.cat !== WATER || !state.supplies.length) return state.cat;
-  const w = state.supplies.map(v => CONFIG.supplies[v]);
-  return 'Нет ' + (w.length > 1 ? w.slice(0, -1).join(', ') + ' и ' + w[w.length - 1] : w[0]);
+function openSlide(el, on){
+  if (!el || el.classList.contains('on') === on) return;
+  el.classList.toggle('on', on);
+  lockSlide(el, on);
+  if (on) reveal(el);
 }
-const slide = document.createElement('div');
-slide.className = 'slide'; slide.id = 'otherSlide';
-slide.innerHTML = '<div><div class="other-inner"><span class="t">Опишите, что случилось</span><div id="otherSlot"></div></div></div>';
-$('cats').appendChild(slide);
+[waterSlide, otherSlide].forEach(el => el && lockSlide(el, false));
 
-let otherOn = null;
+// «Другое»: поле текста и голосовое переезжают в панель
 function setOther(on){
-  if (on === otherOn) return; otherOn = on;
-  slide.classList.toggle('on', on);
+  if (!otherSlide) return;
+  const d = $('describe');
   if (on) {
-    $('otherSlot').appendChild($('describe'));
+    $('otherSlot').appendChild(d);
     $('comment').placeholder = 'Напишите текстом или запишите голосовое';
+    $('comment').setAttribute('aria-labelledby', 'otherTitle');
     $('detailsTitle').innerHTML = 'Фото или видео <i>— по желанию</i>';
-    setTimeout(() => slide.scrollIntoView({behavior:'smooth', block:'nearest'}), 300);
-  } else {
-    $('describeHome').appendChild($('describe'));
+  } else if (d.parentNode !== $('describeHome')) {
+    $('describeHome').appendChild(d);
     $('comment').placeholder = 'Например: внёс 5 рублей, на экране осталось 0';
+    $('comment').removeAttribute('aria-labelledby');
     $('detailsTitle').innerHTML = 'Подробнее <i>— по желанию</i>';
   }
+  openSlide(otherSlide, on);
 }
-setOther(false);
-$('comment').addEventListener('input', () => $('e-other').classList.remove('on'));
 
-group($('pay'), 'chip', null, 'pay');
-const contactOpts = ['Звонок']
-  .concat(CONFIG.viber ? ['Viber'] : [], CONFIG.whatsapp ? ['WhatsApp'] : [], CONFIG.telegram ? ['Telegram'] : []);
-$('contact').style.gridTemplateColumns = `repeat(${contactOpts.length <= 3 ? contactOpts.length : 2},1fr)`;
-group($('contact'), 'chip', contactOpts, 'contact');
-group($('whenChips'), 'chip', null, 'when', v => {
-  const inp = $('whenInput'); inp.style.display = v === 'earlier' ? 'block' : 'none';
-  if (v === 'earlier' && !inp.value) {
-    const d = new Date(Date.now() - 3600e3); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    inp.value = d.toISOString().slice(0,16);
+const chosen = name => form.elements[name] ? (form.elements[name].value || '') : '';
+const supplies = () => [...form.querySelectorAll('input[name="supply"]:checked')].map(i => i.value);
+function categoryText(){
+  const cat = chosen('cat');
+  const s = supplies();
+  if (cat !== WATER || !s.length) return cat;
+  const w = s.map(v => CONFIG.supplies[v]);
+  return 'Нет ' + (w.length > 1 ? w.slice(0, -1).join(', ') + ' и ' + w[w.length - 1] : w[0]);   // «Нет пены и воска»
+}
+
+// одно делегирование на всю форму
+form.addEventListener('change', e => {
+  const t = e.target;
+  if (t.name === 'cat') {
+    showErr('e-cat', false); showErr('e-water', false); showErr('e-other', false);
+    openSlide(waterSlide, t.value === WATER);
+    setOther(t.value === OTHER);
+  } else if (t.name === 'supply') {
+    showErr('e-water', false);
+  } else if (t.name === 'when') {
+    const inp = $('whenInput');
+    inp.hidden = t.value !== 'earlier';
+    if (!inp.hidden && !inp.value) {
+      const d = new Date(Date.now() - 3600e3);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      inp.value = d.toISOString().slice(0, 16);
+    }
+  } else if (t.id === 'fileInput') {
+    addFiles(t.files);
+    t.value = '';
   }
 });
+form.addEventListener('input', e => {
+  if (e.target.id === 'phone') onPhoneInput(e.target);
+  if (e.target.id === 'comment') showErr('e-other', false);
+});
 
-// ---- телефон: +375 (29) 123-45-67
+// ================= 6. ТЕЛЕФОН =================
 function phoneDigits(v){
   let d = digitsOf(v);
   if (d.startsWith('80')) d = '375' + d.slice(2);
@@ -448,302 +590,1018 @@ function formatPhone(v){
   if (!d.startsWith('375')) return '+' + d;
   const r = d.slice(3, 12);
   let s = '+375';
-  if (r.length) s += ' (' + r.slice(0,2);
+  if (r.length) s += ' (' + r.slice(0, 2);
   if (r.length >= 2) s += ')';
-  if (r.length > 2) s += ' ' + r.slice(2,5);
-  if (r.length > 5) s += '-' + r.slice(5,7);
-  if (r.length > 7) s += '-' + r.slice(7,9);
+  if (r.length > 2) s += ' ' + r.slice(2, 5);
+  if (r.length > 5) s += '-' + r.slice(5, 7);
+  if (r.length > 7) s += '-' + r.slice(7, 9);
   return s;
 }
-$('phone').addEventListener('input', e => {
-  const atEnd = e.target.selectionStart === e.target.value.length;
-  const f = formatPhone(e.target.value);
-  if (atEnd && f !== e.target.value) e.target.value = f;
-  $('e-phone').classList.remove('on');
-});
+function onPhoneInput(el){
+  const atEnd = el.selectionStart === el.value.length;
+  const f = formatPhone(el.value);
+  if (atEnd && f !== el.value) el.value = f;
+  showErr('e-phone', false);
+}
 function phoneValid(v){
   const d = phoneDigits(v);
   return d.startsWith('375') ? d.length === 12 : d.length >= 10 && d.length <= 15;
 }
 
-// ---- голосовое
-const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-if (!canRecord) $('micBtn').hidden = true;
-const rec = { mr:null, stream:null, chunks:[], t0:0, tick:null };
-function pickMime(){
-  const list = ['audio/ogg;codecs=opus','audio/mp4','audio/webm;codecs=opus','audio/webm'];
-  if (!MediaRecorder.isTypeSupported) return '';
-  return list.find(m => MediaRecorder.isTypeSupported(m)) || '';
+// ================= 7. ОШИБКИ (связаны с полями через aria-describedby) =================
+const ERR_TARGET = { 'e-cat':'catsBox', 'e-water':'catsBox', 'e-other':'catsBox', 'e-phone':'phone' };
+function showErr(id, on){
+  const err = $(id);
+  if (err.hidden === !on) return;
+  err.hidden = !on;
+  const target = $(ERR_TARGET[id]);
+  const ids = Object.keys(ERR_TARGET).filter(k => ERR_TARGET[k] === ERR_TARGET[id] && !$(k).hidden);
+  if (ids.length) { target.setAttribute('aria-describedby', ids.join(' ')); target.setAttribute('aria-invalid', 'true'); }
+  else { target.removeAttribute('aria-describedby'); target.removeAttribute('aria-invalid'); }
 }
-const fmtSec = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-function micMsg(t){ $('micHint').textContent = t; $('micHint').hidden = !t; }
 
-$('micBtn').onclick = async () => {
+// ================= 8. ГОЛОСОВОЕ (MediaRecorder — только при первом нажатии) =================
+const rec = { mr: null, stream: null, chunks: [], t0: 0, tick: 0, done: null };
+let voice = null;                  // текущее голосовое: { blob, type, name, url, itemId }
+if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) $('micBtn').hidden = true;
+const fmtSec = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const micMsg = t => { $('micHint').textContent = t; $('micHint').hidden = !t; };
+const isRecording = () => !!rec.mr && rec.mr.state === 'recording';
+
+async function startRecording(){
   micMsg('');
-  try {
-    rec.stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-  } catch(_) {
-    micMsg('Нет доступа к микрофону. Разрешите его в настройках браузера или опишите проблему текстом.');
-    return;
-  }
-  const mime = pickMime();
-  try { rec.mr = mime ? new MediaRecorder(rec.stream, { mimeType: mime }) : new MediaRecorder(rec.stream); }
-  catch(_) { rec.mr = new MediaRecorder(rec.stream); }
+  try { rec.stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (_) { micMsg('Нет доступа к микрофону. Разрешите его в настройках браузера или опишите проблему текстом.'); return; }
+  const mime = ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']
+    .find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+  const opts = { audioBitsPerSecond: 32000 };            // для речи достаточно
+  if (mime) opts.mimeType = mime;
+  try { rec.mr = new MediaRecorder(rec.stream, opts); }
+  catch (_) { rec.mr = new MediaRecorder(rec.stream); }
   rec.chunks = [];
-  rec.mr.ondataavailable = e => { if (e.data && e.data.size) rec.chunks.push(e.data); };
-  rec.mr.onstop = () => {
-    clearInterval(rec.tick);
-    rec.stream.getTracks().forEach(t => t.stop());
-    const type = (rec.mr.mimeType || mime || 'audio/webm').split(';')[0];
-    const blob = new Blob(rec.chunks, { type });
-    $('rec').classList.remove('on');
-    if (blob.size < 500) { $('micBtn').hidden = false; micMsg('Запись не получилась — попробуйте ещё раз.'); return; }
-    const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
-    if (state.voice) URL.revokeObjectURL(state.voice.url);
-    state.voice = { blob, type, name: 'voice.' + ext, url: URL.createObjectURL(blob) };
-    $('vaudio').src = state.voice.url;
-    $('vprev').classList.add('on');
-    $('e-other').classList.remove('on');
-  };
+  rec.done = new Promise(resolve => {
+    rec.mr.ondataavailable = e => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+    rec.mr.onstop = () => {
+      clearInterval(rec.tick);
+      rec.stream.getTracks().forEach(t => t.stop());
+      $('rec').hidden = true;
+      const type = (rec.mr.mimeType || mime || 'audio/webm').split(';')[0];
+      const blob = new Blob(rec.chunks, { type });
+      if (blob.size < 500) { $('micBtn').hidden = false; micMsg('Запись не получилась — попробуйте ещё раз.'); resolve(null); return; }
+      const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
+      if (voice) removeItem(voice.itemId);
+      voice = { blob, type, name: 'voice.' + ext, url: URL.createObjectURL(blob) };
+      voice.itemId = addVoiceItem(voice);            // сразу уходит в предзагрузку
+      $('vaudio').src = voice.url;
+      $('vprev').hidden = false;
+      showErr('e-other', false);
+      resolve(voice);
+    };
+  });
   rec.mr.start(1000);
   rec.t0 = Date.now();
-  $('micBtn').hidden = true; $('rec').classList.add('on'); $('recTime').textContent = '0:00';
+  $('micBtn').hidden = true; $('rec').hidden = false; $('recTime').textContent = '0:00';
   rec.tick = setInterval(() => {
     const s = Math.floor((Date.now() - rec.t0) / 1000);
     $('recTime').textContent = fmtSec(s) + ' / ' + fmtSec(CONFIG.maxVoiceSec);
-    if (s >= CONFIG.maxVoiceSec && rec.mr.state === 'recording') rec.mr.stop();
+    if (s >= CONFIG.maxVoiceSec && isRecording()) rec.mr.stop();
   }, 250);
-};
-$('recStop').onclick = () => { if (rec.mr && rec.mr.state !== 'inactive') rec.mr.stop(); };
-$('vdel').onclick = () => {
-  if (state.voice) URL.revokeObjectURL(state.voice.url);
-  state.voice = null; $('vaudio').removeAttribute('src');
-  $('vprev').classList.remove('on'); $('micBtn').hidden = !canRecord;
-};
-// дождаться, пока запись допишется (если нажали «Отправить» во время записи)
-function finishRecording(){
-  return new Promise(res => {
-    if (!rec.mr || rec.mr.state === 'inactive') return res();
-    const prev = rec.mr.onstop;
-    rec.mr.onstop = ev => { prev(ev); res(); };
-    rec.mr.stop();
-  });
+}
+function stopRecording(){ if (isRecording()) rec.mr.stop(); return rec.done || Promise.resolve(voice); }
+function deleteVoice(){
+  if (voice) { removeItem(voice.itemId); URL.revokeObjectURL(voice.url); }
+  voice = null;
+  $('vaudio').removeAttribute('src');
+  $('vprev').hidden = true;
+  $('micBtn').hidden = !window.MediaRecorder;
 }
 
-// ---- фото и видео
-const MB = 1048576;
-const DEFAULT_HINT = `Видео — до ${CONFIG.maxVideoMB} МБ (примерно 20–30 секунд).`;
-$('addFile').onclick = () => $('fileInput').click();
-$('fileInput').onchange = e => {
+// ================= 9. ВЛОЖЕНИЯ: модель =================
+// Каждое вложение проходит путь:
+//   prep (сжатие) → ready → uploading (предзагрузка в Worker) → staged → committed (переслано в заявку)
+// Запасные исходы: failed → delivered (после номера через Worker или Google) | lost | big | removed.
+const KIND_NAME = { img: 'photo', vid: 'video', voice: 'voice' };
+const KIND_RANK = { voice: 0, img: 1, vid: 2 };                 // приоритет очереди: голос → фото → видео
+const PART_RANGE = { img: [1, 30], vid: [100, 109], voice: [200, 209] };
+const att = { draft: null, draftP: null, items: new Map(), next: { img: 1, vid: 100, voice: 200 }, order: 0 };
+const up = { running: new Set(), paused: false, max: 2 };      // не больше 2 загрузок: аплинк узкий
+let ticket = null, claimed = false;                             // номер заявки и «Worker знает номер»
+
+const live = () => [...att.items.values()].filter(it => it.status !== 'removed');
+const videoLimit = () => workerDead ? CONFIG.maxVideoMBSlow : CONFIG.maxVideoMB;
+const DEFAULT_HINT = 'Снимите 10–15 секунд — так видео дойдёт быстрее.';
+$('fileHint').textContent = DEFAULT_HINT;
+
+function newItem(kind, file){
+  const [from, to] = PART_RANGE[kind];
+  const part = att.next[kind]++;
+  const it = { id: uid(), kind, file, blob: null, size: file ? file.size : 0, part, noPre: part > to || part < from,
+    status: 'prep', loaded: 0, order: att.order++, waiters: [], t: { add: performance.now() }, path: '' };
+  att.items.set(it.id, it);
+  return it;
+}
+function setStatus(it, s){
+  it.status = s;
+  const w = it.waiters; it.waiters = [];
+  w.forEach(f => f());
+  if (ticket) paintUpl();
+  pump();
+}
+const changed = it => new Promise(r => it.waiters.push(r));
+function wakeAll(){ att.items.forEach(it => { const w = it.waiters; it.waiters = []; w.forEach(f => f()); }); }
+
+function addVoiceItem(v){
+  const it = newItem('voice', null);
+  it.blob = v.blob; it.size = v.blob.size; it.name = v.name;
+  dbg(`голосовое: ${(it.size / 1024).toFixed(0)} КБ`);
+  setStatus(it, 'ready');
+  return it.id;
+}
+
+function addFiles(list){
   let msg = '';
-  [...e.target.files].forEach(f => {
+  for (const f of list) {
     const isVid = f.type.startsWith('video/') || /\.(mov|mp4|m4v|3gp|avi|mkv|webm)$/i.test(f.name);
     const isImg = !isVid && (f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name));
-    if (!isVid && !isImg) return;
+    if (!isVid && !isImg) continue;
     const kind = isVid ? 'vid' : 'img';
-    const count = state.files.filter(x => x.kind === kind).length;
-    if (kind === 'img' && count >= CONFIG.maxPhotos) { msg = `Можно приложить до ${CONFIG.maxPhotos} фото.`; return; }
-    if (kind === 'vid' && count >= CONFIG.maxVideos) { msg = `Можно приложить до ${CONFIG.maxVideos} видео.`; return; }
-    const item = { file:f, kind, big: isVid && f.size > CONFIG.maxVideoMB*MB, url: URL.createObjectURL(f) };
-    if (kind === 'img') item.prep = compressImage(f).catch(() => null);
-    state.files.push(item);
-  });
-  e.target.value = ''; renderFiles(msg);
-};
-function renderFiles(msg){
-  const big = state.files.some(x => x.big);
+    const count = live().filter(x => x.kind === kind).length;
+    if (kind === 'img' && count >= CONFIG.maxPhotos) { msg = `Можно приложить до ${CONFIG.maxPhotos} фото.`; continue; }
+    if (kind === 'vid' && count >= CONFIG.maxVideos) { msg = `Можно приложить до ${CONFIG.maxVideos} видео.`; continue; }
+    const it = newItem(kind, f);
+    it.url = URL.createObjectURL(f);
+    it.name = f.name || (kind === 'img' ? 'photo.jpg' : 'video.mp4');
+    it.el = thumb(it);
+    $('files').appendChild(it.el);                  // добавляем только новый элемент
+    if (kind === 'img') prepPhoto(it); else prepVideo(it);
+  }
+  updateHint(msg);
+  ensureDraft();
+}
+
+function thumb(it){
+  const li = document.createElement('li');
+  li.className = 'thumb';
+  li.dataset.id = it.id;
+  const label = it.kind === 'img' ? 'фото' : 'видео';
+  li.append(label);
+  if (it.kind === 'img') {
+    const img = new Image();
+    img.alt = ''; img.decoding = 'async'; img.src = it.url;
+    img.addEventListener('error', () => img.remove(), { once: true });
+    li.append(img);
+  } else {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = it.url + '#t=0.1';
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = 'видео';
+    it.tag = tag;
+    li.append(v, tag);
+  }
+  const del = document.createElement('button');
+  del.type = 'button'; del.dataset.act = 'remove-file'; del.textContent = '×';
+  del.setAttribute('aria-label', 'Удалить ' + label);
+  li.append(del);
+  return li;
+}
+function setTag(it, text, big){
+  if (!it.tag) return;
+  it.tag.textContent = text;
+  it.tag.classList.toggle('big', !!big);
+}
+
+function removeItem(id){
+  const it = att.items.get(id);
+  if (!it || it.status === 'removed') return;
+  const wasStagedOrUp = it.status === 'staged' || it.status === 'uploading';
+  it.status = 'removed';
+  if (it.abort) it.abort();                              // идёт предзагрузка — отменяем
+  if (it.vw) { try { it.vw.terminate(); } catch (_) {} it.vw = null; }   // идёт сжатие — останавливаем
+  if (wasStagedOrUp && att.draft) {                      // уже в служебной группе — помечаем удалённым
+    fetch(`${WORKER}/pre-del?token=${encodeURIComponent(att.draft.token)}&part=${it.part}`, { method: 'POST' }).catch(() => {});
+  }
+  if (it.url) URL.revokeObjectURL(it.url);
+  if (it.el) it.el.remove();                             // удаляем только этот элемент
+  const w = it.waiters; it.waiters = []; w.forEach(f => f());
+  updateHint('');
+  pump();
+}
+function updateHint(msg){
+  const items = live();
+  const big = items.some(x => x.status === 'big');
+  const trimmed = items.some(x => x.trimmed);
   $('fileHint').textContent = msg || (big
-    ? `Видео больше ${CONFIG.maxVideoMB} МБ не пройдёт через форму — после отправки заявки предложим переслать его в Viber или WhatsApp.`
-    : DEFAULT_HINT);
-  $('files').innerHTML = state.files.map((x,i) => `<div class="thumb">${x.kind==='img'
-      ? `фото<img src="${x.url}" alt="" onerror="this.remove()">`
-      : `видео<video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><span class="tag${x.big?' big':''}">${x.big?'большое':'видео'}</span>`}
-      <button type="button" data-i="${i}" aria-label="Удалить">×</button></div>`).join('');
-  $('files').querySelectorAll('button').forEach(b => b.onclick = () => {
-    URL.revokeObjectURL(state.files[b.dataset.i].url); state.files.splice(+b.dataset.i,1); renderFiles();
+    ? `Видео больше ${videoLimit()} МБ не пройдёт через форму — после отправки заявки предложим переслать его в Viber или WhatsApp.`
+    : trimmed ? 'Видео длиннее минуты — отправим первые 60 секунд.' : DEFAULT_HINT);
+}
+
+// ================= 10. ФОТО: сжатие при выборе =================
+let prepRunning = 0;
+const prepWaiting = [];
+function queuePrep(file){                // не больше двух одновременно — слабые телефоны не подвисают
+  return new Promise(resolve => {
+    const run = async () => {
+      prepRunning++;
+      try { resolve(await prepImage(file)); } catch (_) { resolve(null); }
+      finally { prepRunning--; const next = prepWaiting.shift(); if (next) next(); }
+    };
+    prepRunning < 2 ? run() : prepWaiting.push(run);
   });
 }
-renderFiles();
+async function prepPhoto(it){
+  const t0 = performance.now();
+  const b = await queuePrep(it.file);
+  if (it.status === 'removed') return;
+  it.blob = b || (it.file.size <= 15 * MB ? it.file : null);
+  if (!it.blob) { setStatus(it, 'lost'); return; }
+  if (!b) it.name = it.file.name || 'photo';               // не сжалось (редкий формат) — как есть, документом
+  else it.name = `photo${it.part}.jpg`;
+  it.size = it.blob.size;
+  dbg(`фото ${it.part}: ${(it.file.size / MB).toFixed(2)} МБ → ${(it.size / MB).toFixed(2)} МБ за ${((performance.now() - t0) / 1000).toFixed(1)} с`);
+  setStatus(it, 'ready');
+}
 
-function compressImage(file){
+// фото -> JPEG до 1280 px, 0.75 (обычно 100–250 КБ); ориентация из EXIF
+function loadImg(blob){
   return new Promise((res, rej) => {
-    const img = new Image(), url = URL.createObjectURL(file);
-    img.onload = () => {
-      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
-      const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-      res(c.toDataURL('image/jpeg', 0.78).split(',')[1]);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    const img = new Image(), url = URL.createObjectURL(blob);
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
     img.src = url;
   });
 }
-const readB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
-
-// ---- отправка
-const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
-
-// Важно: без отслеживания загрузки (upload progress) — иначе браузер шлёт
-// предварительный CORS-запрос, на который Google Apps Script не отвечает.
-async function post(body, onProgress){
-  let f = 0;
-  const t = onProgress ? setInterval(() => { f += (0.9 - f) * 0.08; onProgress(f); }, 200) : null;
+async function compressImage(blob){
+  let src, w, h, close = () => {};
   try {
-    const ctrl = new AbortController();
-    const kill = setTimeout(() => ctrl.abort(), 300000);
+    src = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+    w = src.width; h = src.height; close = () => src.close();
+  } catch (_) {
+    src = await loadImg(blob); w = src.naturalWidth; h = src.naturalHeight;
+  }
+  try {
+    const k = Math.min(1, 1280 / Math.max(w, h));
+    const cw = Math.round(w * k), ch = Math.round(h * k);
+    if (typeof OffscreenCanvas !== 'undefined') {
+      try {
+        const oc = new OffscreenCanvas(cw, ch);
+        const ctx = oc.getContext('2d');
+        if (ctx && oc.convertToBlob) { ctx.drawImage(src, 0, 0, cw, ch); return await oc.convertToBlob({ type: 'image/jpeg', quality: 0.75 }); }
+      } catch (_) {}
+    }
+    const c = document.createElement('canvas');
+    c.width = cw; c.height = ch;
+    c.getContext('2d').drawImage(src, 0, 0, cw, ch);
+    return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/jpeg', 0.75));
+  } finally { close(); }
+}
+
+// HEIC: Safari открывает сам, Chrome — нет. Тогда подгружаем конвертер (только в этот момент).
+const isHeic = f => /hei[cf]/i.test(f.type || '') || /\.(heic|heif)$/i.test(f.name || '');
+let heicLib = null;
+function loadHeic2any(){
+  if (window.heic2any) return Promise.resolve(window.heic2any);
+  if (heicLib) return heicLib;
+  const urls = [
+    'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js'
+  ];
+  heicLib = urls.reduce((prev, u) => prev.catch(() => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = u; s.async = true;
+    s.onload = () => window.heic2any ? res(window.heic2any) : rej();
+    s.onerror = rej;
+    document.head.appendChild(s);
+  })), Promise.reject());
+  heicLib.catch(() => { heicLib = null; });
+  return heicLib;
+}
+async function prepImage(file){
+  try { return await compressImage(file); } catch (_) {}
+  if (isHeic(file)) {
+    try {
+      const convert = await loadHeic2any();
+      let jpg = await convert({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+      if (Array.isArray(jpg)) jpg = jpg[0];
+      return await compressImage(jpg);
+    } catch (_) {}
+  }
+  return null;
+}
+
+// ================= 11. ВИДЕО: сжатие на телефоне (WebCodecs, в отдельном потоке) =================
+// 1080p → 720p, H.264 ~1,5 Мбит/с, до 30 к/с, звук AAC без перекодирования, не длиннее 60 с.
+// Нет WebCodecs / не поддерживается кодек / не уложились по времени / выигрыш < 20% — уходит оригинал.
+const VIDEO_LIBS = [
+  ['https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js', 'https://fastly.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js'],
+  ['https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js', 'https://fastly.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js']
+];
+const VIDEO_CODECS = 'avc';            // выходной кодек: H.264 (единственный, который везде играет)
+const canCompressVideo = () => typeof VideoEncoder === 'function' && typeof VideoDecoder === 'function' &&
+  typeof OffscreenCanvas === 'function' && typeof Worker === 'function';
+
+const VIDEO_WORKER_SRC = String.raw`
+'use strict';
+self.onmessage = async e => {
+  const o = e.data;
+  try {
+    for (const alts of o.libs) {
+      let ok = false;
+      for (const u of alts) { try { importScripts(u); ok = true; break; } catch (_) {} }
+      if (!ok) throw new Error('libs');
+    }
+    const out = await transcode(o);
+    self.postMessage({ done: true, blob: out.blob, trimmed: out.trimmed, info: out.info });
+  } catch (err) {
+    self.postMessage({ error: String((err && err.message) || err) });
+  }
+};
+function rotationOf(m) {
+  if (!m) return 0;
+  const deg = ((Math.round(Math.atan2(m[1] / 65536, m[0] / 65536) * 180 / Math.PI) % 360) + 360) % 360;
+  return [0, 90, 180, 270, 360].reduce((b, d) => Math.abs(d - deg) < Math.abs(b - deg) ? d : b, 0) % 360;
+}
+function descOf(trak) {
+  for (const entry of trak.mdia.minf.stbl.stsd.entries) {
+    const box = entry.avcC || entry.hvcC || entry.vpcC || entry.av1C;
+    if (box) {
+      const s = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+      box.write(s);
+      return new Uint8Array(s.buffer, 8);
+    }
+  }
+  return undefined;
+}
+function aacConfigOf(trak) {
+  try { return trak.mdia.minf.stbl.stsd.entries[0].esds.esd.descs[0].descs[0].data; } catch (_) { return undefined; }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function transcode(o) {
+  const t0 = Date.now();
+  const file = o.file;
+  const mp4 = MP4Box.createFile();
+  let info = null, demuxErr = null;
+  mp4.onReady = i => { info = i; };
+  mp4.onError = e => { demuxErr = e; };
+  const CH = 4 * 1024 * 1024;
+  for (let off = 0; off < file.size; off += CH) {
+    const buf = await file.slice(off, off + CH).arrayBuffer();
+    buf.fileStart = off;
+    mp4.appendBuffer(buf);
+  }
+  mp4.flush();
+  if (demuxErr || !info) throw new Error('demux');
+  const vt = info.videoTracks[0];
+  if (!vt) throw new Error('no video');
+  const at = info.audioTracks[0];
+  if (at && !/^mp4a\.40/.test(at.codec)) throw new Error('audio ' + at.codec);
+
+  const srcW = vt.video.width, srcH = vt.video.height;
+  const durSec = (vt.duration / vt.timescale) || (info.duration / info.timescale);
+  const limitSec = Math.min(durSec, o.maxSec);
+  const trimmed = durSec > o.maxSec + 0.5;
+  const srcFps = vt.nb_samples / (durSec || 1);
+  const fps = Math.max(1, Math.min(o.maxFps, Math.round(srcFps) || 30));
+  const k = Math.min(1, o.maxSide / Math.max(srcW, srcH));
+  const W = Math.max(2, Math.round(srcW * k / 2) * 2), H = Math.max(2, Math.round(srcH * k / 2) * 2);
+  const rotation = rotationOf(vt.matrix);          // поворот сохраняем в метаданных, как в оригинале
+
+  const decCfg = { codec: vt.codec, codedWidth: srcW, codedHeight: srcH, description: descOf(mp4.getTrackById(vt.id)) };
+  if (!(await VideoDecoder.isConfigSupported(decCfg)).supported) throw new Error('decode ' + vt.codec);
+  const candidates = o.codecs === 'vp9'
+    ? [{ codec: 'vp09.00.31.08', mux: 'vp9' }]
+    : [{ codec: 'avc1.640028', mux: 'avc' }, { codec: 'avc1.4d401f', mux: 'avc' }, { codec: 'avc1.42001f', mux: 'avc' }];
+  let enc = null;
+  for (const c of candidates) {
+    const cfg = { codec: c.codec, width: W, height: H, bitrate: o.bitrate, framerate: fps, latencyMode: 'quality' };
+    if (c.mux === 'avc') cfg.avc = { format: 'avc' };
+    try { if ((await VideoEncoder.isConfigSupported(cfg)).supported) { enc = { cfg, mux: c.mux }; break; } } catch (_) {}
+  }
+  if (!enc) throw new Error('encode unsupported');
+
+  const target = new Mp4Muxer.ArrayBufferTarget();
+  const muxer = new Mp4Muxer.Muxer({
+    target,
+    video: { codec: enc.mux, width: W, height: H, rotation, frameRate: fps },
+    audio: at ? { codec: 'aac', sampleRate: at.audio.sample_rate, numberOfChannels: at.audio.channel_count } : undefined,
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset'
+  });
+
+  const vSamples = [], aSamples = [];
+  mp4.onSamples = (id, user, samples) => { for (const s of samples) (id === vt.id ? vSamples : aSamples).push(s); };
+  mp4.setExtractionOptions(vt.id, null, { nbSamples: 1e9 });
+  if (at) mp4.setExtractionOptions(at.id, null, { nbSamples: 1e9 });
+  mp4.start();
+  if (!vSamples.length) throw new Error('no samples');
+
+  // звук — без перекодирования (AAC как есть), до 60 с
+  if (at) {
+    const desc = aacConfigOf(mp4.getTrackById(at.id));
+    let first = true;
+    for (const s of aSamples) {
+      const ts = s.cts * 1e6 / s.timescale;
+      if (ts >= limitSec * 1e6) break;
+      muxer.addAudioChunkRaw(s.data, 'key', ts, s.duration * 1e6 / s.timescale, first ? { decoderConfig: {
+        codec: at.codec, sampleRate: at.audio.sample_rate, numberOfChannels: at.audio.channel_count, description: desc } } : undefined);
+      first = false;
+    }
+  }
+
+  let fail = null;
+  const canvas = new OffscreenCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  const encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: e => { fail = e; } });
+  encoder.configure(enc.cfg);
+  const minGap = 1e6 / fps * 0.85;
+  const total = Math.max(1, vSamples.filter(s => s.cts / s.timescale < limitSec).length);
+  let lastTs = -1e12, n = 0, decoded = 0;
+  const decoder = new VideoDecoder({
+    output: frame => {
+      decoded++;
+      const ts = frame.timestamp;
+      if (ts >= limitSec * 1e6 || ts - lastTs < minGap) { frame.close(); return; }
+      lastTs = ts;
+      ctx.drawImage(frame, 0, 0, W, H);
+      frame.close();
+      const vf = new VideoFrame(canvas, { timestamp: ts, duration: Math.round(1e6 / fps) });
+      encoder.encode(vf, { keyFrame: n % (fps * 2) === 0 });
+      vf.close();
+      n++;
+      if (n % 10 === 0) self.postMessage({ progress: Math.min(0.99, decoded / total) });
+    },
+    error: e => { fail = e; }
+  });
+  decoder.configure(decCfg);
+  // не дольше длительности ролика × 1,5 — иначе выгоднее отправить оригинал
+  const deadline = t0 + Math.max(6, limitSec * 1.5) * 1000;
+  for (const s of vSamples) {
+    if (fail) throw fail;
+    if (s.dts / s.timescale > limitSec + 1) break;
+    decoder.decode(new EncodedVideoChunk({ type: s.is_sync ? 'key' : 'delta', timestamp: s.cts * 1e6 / s.timescale,
+      duration: s.duration * 1e6 / s.timescale, data: s.data }));
+    while (decoder.decodeQueueSize > 6 || encoder.encodeQueueSize > 6) {
+      await sleep(2);
+      if (fail) throw fail;
+      if (Date.now() > deadline) throw new Error('slow');
+    }
+    if (Date.now() > deadline) throw new Error('slow');
+  }
+  await decoder.flush();
+  await encoder.flush();
+  if (fail) throw fail;
+  decoder.close(); encoder.close();
+  muxer.finalize();
+  return {
+    blob: new Blob([target.buffer], { type: 'video/mp4' }),
+    trimmed,
+    info: { srcW, srcH, W, H, rotation, fps, durSec: Math.round(durSec * 10) / 10, ms: Date.now() - t0, codec: enc.cfg.codec, frames: n }
+  };
+}
+`;
+let videoWorkerUrl = null;
+function compressVideo(it){
+  return new Promise(resolve => {
+    let w;
+    try {
+      videoWorkerUrl = videoWorkerUrl || URL.createObjectURL(new Blob([VIDEO_WORKER_SRC], { type: 'text/javascript' }));
+      w = new Worker(videoWorkerUrl);
+    } catch (_) { resolve(null); return; }
+    it.vw = w;
+    let done = false;
+    const finish = res => { if (done) return; done = true; clearTimeout(hard); try { w.terminate(); } catch (_) {} it.vw = null; resolve(res); };
+    const hard = setTimeout(() => finish({ error: 'timeout' }), 5 * 60 * 1000);
+    w.onmessage = e => {
+      const d = e.data;
+      if (d.progress != null) setTag(it, `Готовим видео… ${Math.round(d.progress * 100)}%`);
+      else finish(d);
+    };
+    w.onerror = () => finish({ error: 'worker' });
+    w.postMessage({ file: it.file, libs: VIDEO_LIBS, codecs: VIDEO_CODECS, maxSide: 1280, bitrate: 1500000, maxFps: 30, maxSec: 60 });
+  });
+}
+async function prepVideo(it){
+  const t0 = performance.now();
+  let blob = it.file;
+  if (canCompressVideo()) {
+    setTag(it, 'Готовим видео… 0%');
+    const r = await compressVideo(it);
+    if (it.status === 'removed') return;
+    const sec = ((performance.now() - t0) / 1000).toFixed(1);
+    // выигрыш меньше 20% — шлём оригинал; но ролик длиннее минуты всё равно обрезаем до 60 с
+    if (r && r.blob && (r.blob.size < it.file.size * 0.8 || (r.trimmed && r.blob.size < it.file.size))) {
+      blob = r.blob;
+      it.trimmed = r.trimmed;
+      it.name = (it.name || 'video').replace(/\.\w+$/, '') + '.mp4';
+      dbg(`видео ${it.part}: ${(it.file.size / MB).toFixed(1)} МБ → ${(blob.size / MB).toFixed(1)} МБ за ${sec} с`, r.info);
+    } else {
+      dbg(`видео ${it.part}: сжатие не помогло (${r && r.error ? r.error : r && r.blob ? 'выигрыш < 20%' : 'нет'}) — отправим оригинал, ${sec} с`);
+    }
+  }
+  it.blob = blob; it.size = blob.size;
+  if (it.size > videoLimit() * MB) { setTag(it, 'большое', true); setStatus(it, 'big'); updateHint(''); return; }
+  setTag(it, it.trimmed ? 'видео · 60 с' : 'видео');
+  updateHint('');
+  setStatus(it, 'ready');
+}
+
+// ================= 12. СЕТЬ =================
+// Google: только text/plain — иначе браузер шлёт preflight, на который Apps Script не отвечает.
+// keepalive — заявка дойдёт, даже если вкладку закрыли (до 64 КБ).
+async function gsPost(body, timeout){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeout);
+  try {
     const res = await fetch(CONFIG.scriptUrl, {
-      method: 'POST', body, signal: ctrl.signal,
+      method: 'POST', body, signal: ctrl.signal, keepalive: body.length < 60000,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
-    clearTimeout(kill);
     const r = await res.json();
-    if (!r.ok) throw r;
-    if (onProgress) onProgress(1);
+    if (!r || !r.ok) throw r || {};
     return r;
-  } finally { if (t) clearInterval(t); }
+  } finally { clearTimeout(t); }
 }
-async function postRetry(body, onProgress){
-  try { return await post(body, onProgress); }
-  catch(_) { return await post(body, onProgress); }
-}
-function demoPost(body, onProgress){
-  return new Promise(res => { let p = 0; const t = setInterval(() => { p += .25; onProgress && onProgress(Math.min(p,1)); if (p >= 1) { clearInterval(t); res({ ok:true, id:'ДЕМО' }); } }, 80); });
+async function postJson(url, timeout = 15000){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeout);
+  try { return await (await fetch(url, { method: 'POST', signal: ctrl.signal })).json(); }
+  finally { clearTimeout(t); }
 }
 
-let sending = false, uploading = false;
-window.addEventListener('beforeunload', e => { if (uploading) { e.preventDefault(); e.returnValue = ''; } });
+// Загрузка файла в Worker: настоящий прогресс; 20 с без движения — прервать. Можно отменить.
+function xhrUpload(url, body, type, onProgress){
+  const x = new XMLHttpRequest();
+  const promise = new Promise((resolve, reject) => {
+    let last = Date.now(), limit = 20000, uploaded = false, finished = false;
+    const watch = setInterval(() => { if (Date.now() - last > limit) x.abort(); }, 1000);
+    const end = fn => () => { if (finished) return; finished = true; clearInterval(watch); fn(); };
+    x.open('POST', url);
+    if (type) x.setRequestHeader('Content-Type', type);
+    x.timeout = 10 * 60 * 1000;                                   // верхняя граница
+    x.upload.onprogress = ev => { last = Date.now(); if (ev.lengthComputable && onProgress) onProgress(ev.loaded / ev.total); };
+    x.upload.onload = () => { uploaded = true; last = Date.now(); limit = 90000; };   // всё ушло — ждём Telegram
+    x.onload = end(() => {
+      let r = null;
+      try { r = JSON.parse(x.responseText); } catch (_) {}
+      r ? resolve(r) : reject({ net: true, uploaded });
+    });
+    x.onerror = x.ontimeout = x.onabort = end(() => reject({ net: true, uploaded }));
+    x.send(body);
+  });
+  return { promise, abort: () => x.abort() };
+}
 
-$('form').onsubmit = async e => {
+// ================= 13. ПРЕДЗАГРУЗКА (пока клиент заполняет форму) =================
+// Черновой ключ выдаёт Worker при открытии формы; файлы уходят в служебную группу как file_id.
+function ensureDraft(){
+  if (!WORKER || workerDead || att.draft) return Promise.resolve(att.draft);
+  if (att.draftP) return att.draftP;
+  att.draftP = postJson(`${WORKER}/draft`, 8000)
+    .then(r => {
+      if (!r.ok) { dbg('черновик не выдан: ' + r.error + ' — файлы пойдут после номера'); return null; }
+      att.draft = { id: r.draft, token: r.token };
+      dbg('черновик ' + r.draft);
+      pump();
+      return att.draft;
+    })
+    .catch(() => { workerDead = true; wakeAll(); dbg('Worker недоступен — файлы пойдут через Google'); return null; })
+    .finally(() => { att.draftP = null; });
+  return att.draftP;
+}
+
+function pump(){
+  if (up.paused || !att.draft || workerDead) return;
+  const ready = live().filter(it => it.status === 'ready' && !it.noPre)
+    .sort((a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || a.order - b.order);
+  for (const it of ready) {
+    if (up.running.size >= up.max) break;
+    preupload(it);
+  }
+}
+
+async function preupload(it){
+  up.running.add(it);
+  it.status = 'uploading'; it.loaded = 0; it.path = 'предзагрузка';
+  const t0 = performance.now();
+  const url = `${WORKER}/pre?token=${encodeURIComponent(att.draft.token)}&part=${it.part}&kind=${KIND_NAME[it.kind]}&name=${encodeURIComponent(it.name || 'file')}`;
+  const type = it.blob.type || (it.kind === 'img' ? 'image/jpeg' : it.kind === 'vid' ? 'video/mp4' : 'audio/mp4');
+  let res = null, err = null;
+  try {
+    let x = xhrUpload(url, it.blob, type, f => { it.loaded = f; if (ticket) paintUpl(); });
+    it.abort = x.abort;
+    res = await x.promise;
+    if (!res.ok && res.fallback === 'document') {
+      x = xhrUpload(url + '&as=document', it.blob, type, f => { it.loaded = f; if (ticket) paintUpl(); });
+      it.abort = x.abort;
+      res = await x.promise;
+    }
+  } catch (e) { err = e; }
+  up.running.delete(it);
+  it.abort = null;
+  if (it.status === 'removed') { pump(); return; }
+  if (it.requeue) {                                   // уступили канал тексту заявки — начнём заново
+    it.requeue = false; it.loaded = 0;
+    setStatus(it, 'ready');
+    return;
+  }
+  const sec = (performance.now() - t0) / 1000;
+  if (res && res.ok) {
+    it.loaded = 1;
+    dbg(`предзагрузка ${KIND_NAME[it.kind]} ${it.part}: ${(it.size / MB).toFixed(2)} МБ за ${sec.toFixed(1)} с (${(it.size / MB / sec).toFixed(2)} МБ/с)`);
+    setStatus(it, 'staged');
+    return;
+  }
+  dbg(`предзагрузка ${KIND_NAME[it.kind]} ${it.part} не удалась: ${res ? res.error : 'сеть'}`);
+  if (err && err.net && !(await workerAlive())) { workerDead = true; wakeAll(); }
+  setStatus(it, 'failed');                            // доставим после номера запасным путём
+}
+async function workerAlive(){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  try { return (await fetch(WORKER, { signal: ctrl.signal })).ok; } catch (_) { return false; }
+  finally { clearTimeout(t); }
+}
+
+// ================= 14. ЧЕРНОВИК ЗАЯВКИ (пока сервер не подтвердил) =================
+const PKEY = 'moika_pending';
+function savePending(job){
+  try { localStorage.setItem(PKEY, JSON.stringify({ payload: job.payload, ts: Date.now(), hadFiles: job.hadFiles })); } catch (_) {}
+}
+function loadPending(){
+  try {
+    const p = JSON.parse(localStorage.getItem(PKEY) || 'null');
+    if (p && p.payload && Date.now() - p.ts < 3 * 86400e3) return p;
+    localStorage.removeItem(PKEY);
+  } catch (_) {}
+  return null;
+}
+function clearPending(){ try { localStorage.removeItem(PKEY); } catch (_) {} }
+
+// ================= 15. ОТПРАВКА ЗАЯВКИ =================
+let guard = false;               // предупреждение при закрытии вкладки — сразу после нажатия
+window.addEventListener('beforeunload', e => { if (guard) { e.preventDefault(); e.returnValue = ''; } });
+
+let busy = false;
+form.addEventListener('submit', e => {
   e.preventDefault();
-  if (sending) return;
-  await finishRecording();
-  let ok = true;
-  if (!state.cat) { $('e-cat').classList.add('on'); ok = false; }
-  if (state.cat === WATER && !state.supplies.length) { $('e-water').classList.add('on'); ok = false; }
-  if (state.cat === OTHER && !$('comment').value.trim() && !state.voice) { $('e-other').classList.add('on'); ok = false; }
-  if (!phoneValid($('phone').value)) { $('e-phone').classList.add('on'); ok = false; }
-  if (!ok) { document.querySelector('.err.on').scrollIntoView({behavior:'smooth', block:'center'}); return; }
+  if (busy) return;                                       // двойное нажатие
+  const tClick = performance.now();
 
-  sending = true;
-  const job = await buildJob();
-  showDone(job);   // экран подтверждения — сразу, без ожидания сервера
-  runJob(job);     // отправка идёт в фоне
-};
-
-async function buildJob(){
-  // фото уже сжаты в момент выбора — здесь только собираем
-  const photos = [], videos = [];
-  let skipped = 0;
-  for (const x of state.files) {
-    if (x.kind === 'img') {
-      const data = await x.prep;
-      if (data) photos.push({ name:'photo.jpg', mime:'image/jpeg', data });
-      else if (x.file.size <= 15*MB) photos.push({ name: x.file.name || 'photo.heic', mime: x.file.type || 'image/heic', data: await readB64(x.file) });
-      else skipped++;
-    } else if (x.big) skipped++;
-    else videos.push(x);
-  }
-  const payload = {
-    action:'create', post: state.post, category: categoryText(),
-    when: state.when === 'now' ? `только что (${fmt(new Date())})` : ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше'),
-    amount: $('amount').value.trim(), payment: state.pay || '',
-    plate: $('plate').value.trim().toUpperCase(), comment: $('comment').value.trim(),
-    phone: '+' + phoneDigits($('phone').value), contact: state.contact, promo: $('promo').checked,
-    photos: photos.length, videos: videos.length, voice: !!state.voice, skipped,
-    website: $('website').value
-  };
-  // мелкое — первым, видео — последним
-  const steps = [];
-  const voice = state.voice;
-  if (voice) steps.push({ kind:'voice', weight: voice.blob.size * 1.34 + 20000,
-    get: async () => [{ name: voice.name, mime: voice.type, data: await readB64(voice.blob) }] });
-  for (let i = 0; i < photos.length; i += 10) {
-    const part = photos.slice(i, i + 10);
-    steps.push({ kind:'photo', weight: part.reduce((s,p) => s + p.data.length, 0) + 20000, get: async () => part });
-  }
-  videos.forEach(v => steps.push({ kind:'video', weight: v.file.size * 1.34 + 20000,
-    get: async () => [{ name: v.file.name || 'video.mp4', mime: v.file.type || 'video/mp4', data: await readB64(v.file) }] }));
-  return { payload, steps, skipped };
-}
-
-function showDone(job){
-  const p = job.payload;
-  const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp', 'Telegram':'напишем в Telegram' }[p.contact] || 'свяжемся';
-  $('doneIco').className = 'ok'; $('doneIco').textContent = '✓';
-  $('doneTitle').textContent = 'Заявка принята';
-  $('doneText').innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <span style="white-space:nowrap">${formatPhone(p.phone)}</span>.`;
-  $('doneNum').hidden = true; $('doneNote').hidden = true; $('retryBtn').hidden = true;
-  go('s-done');
-}
-
-function sendFailed(job){
-  $('doneIco').className = 'ok bad'; $('doneIco').textContent = '!';
-  $('doneTitle').textContent = 'Заявка не отправилась';
-  $('doneText').innerHTML = 'Похоже, пропал интернет. Всё, что вы заполнили, сохранено — нажмите «Отправить ещё раз». Или ' +
-    (inHours() ? `<a href="tel:${CONFIG.phone}">позвоните нам</a>.` : `<a href="${waHref()}" target="_blank" rel="noopener">напишите в WhatsApp</a>.`);
-  $('upl').hidden = true;
-  $('retryBtn').hidden = false;
-  $('retryBtn').onclick = () => { showDone(job); runJob(job); };
-}
-
-async function pool(items, n, fn){
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) await fn(items[i++]);
-  }));
-}
-
-async function runJob(job){
-  uploading = true;
-  const send = CONFIG.scriptUrl ? postRetry : demoPost;
-  const box = $('upl'), fill = box.querySelector('i'), txt = $('uplText');
-  const head = job.steps.length ? 25 : 100;          // доля полоски на саму заявку
-  box.hidden = false; box.classList.remove('fin');
-  txt.textContent = 'Доставляем заявку…';
-  fill.style.width = '4%';
-
-  let id;
-  try { id = (await send(JSON.stringify(job.payload), f => fill.style.width = Math.max(4, Math.round(f * head)) + '%')).id; }
-  catch(_) { uploading = false; return sendFailed(job); }
-  $('doneNum').innerHTML = `Номер заявки: <b>#${id}</b>`; $('doneNum').hidden = false;
-  if (job.skipped) showNote(id, job.skipped, 0);
-
-  if (!job.steps.length) {
-    uploading = false; box.classList.add('fin'); fill.style.width = '100%'; txt.textContent = 'Заявка доставлена ✓';
+  // проверка — синхронно
+  const cat = chosen('cat');
+  const recording = isRecording();
+  const bad = [];
+  if (!cat) bad.push(['e-cat', 'catsBox']);
+  if (cat === WATER && !supplies().length) bad.push(['e-water', 'catsBox']);
+  if (cat === OTHER && !$('comment').value.trim() && !voice && !recording) bad.push(['e-other', 'comment']);
+  if (!phoneValid($('phone').value)) bad.push(['e-phone', 'phone']);
+  ['e-cat', 'e-water', 'e-other', 'e-phone'].forEach(id => showErr(id, bad.some(b => b[0] === id)));
+  if (bad.length) {
+    const first = $(bad[0][1]);
+    const focusEl = first.matches('fieldset') ? first.querySelector('input:checked, input') : first;
+    focusEl.focus({ preventScroll: true });
+    first.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
     return;
   }
 
-  // вложения — параллельно, по 3 одновременно
-  const total = job.steps.reduce((s,x) => s + x.weight, 0);
-  const live = new Map();
-  let doneW = 0, finished = 0, failed = 0;
-  const paint = () => {
-    let w = doneW; live.forEach((f, s) => w += s.weight * f);
-    fill.style.width = Math.round(head + (100 - head) * w / total) + '%';
-    txt.textContent = `Заявка доставлена. Загружаем вложения: ${finished} из ${job.steps.length} — не закрывайте страницу.`;
+  // интерфейс меняется в том же кадре, до любых ожиданий
+  busy = true;
+  const btn = $('submit');
+  btn.disabled = true; btn.textContent = 'Отправляем…';
+  const job = buildJob(recording);
+  savePending(job);
+  runJob(job, tClick);                                    // запрос уходит синхронно внутри
+});
+
+function buildJob(recording){
+  const items = live();
+  const payload = {
+    action: 'create', clientId: uid(), retry: false, post, category: categoryText(),
+    when: chosen('when') === 'earlier'
+      ? ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше')
+      : `только что (${fmt(new Date())})`,
+    amount: $('amount').value.trim(), payment: chosen('pay'),
+    plate: $('plate').value.trim().toUpperCase(), comment: $('comment').value.trim(),
+    phone: '+' + phoneDigits($('phone').value), contact: chosen('contact') || 'Звонок', promo: $('promo').checked,
+    photos: items.filter(x => x.kind === 'img' && x.status !== 'lost').length,
+    videos: items.filter(x => x.kind === 'vid' && x.status !== 'big').length,
+    skipped: items.filter(x => x.kind === 'vid' && x.status === 'big').length,
+    voice: !!voice || recording,
+    draftId: att.draft ? att.draft.id : '',
+    website: $('website').value
   };
-  paint();
-  await pool(job.steps, 3, async s => {
-    try {
-      const files = await s.get();
-      await send(JSON.stringify({ action:'files', id, kind: s.kind, files }), f => { live.set(s, f); paint(); });
-    } catch(_) { failed++; }
-    live.delete(s); doneW += s.weight; finished++; paint();
-  });
-  uploading = false;
-  if (failed) { box.hidden = true; showNote(id, job.skipped, failed); }
-  else { box.classList.add('fin'); fill.style.width = '100%'; txt.textContent = 'Заявка и все вложения доставлены ✓'; }
+  // если идёт запись — останавливаем, голосовое приложим после получения номера
+  const voiceP = recording ? stopRecording() : Promise.resolve(voice);
+  return { payload, voiceP, hadFiles: items.length > 0 || payload.voice };
 }
 
-function showNote(id, skipped, failed){
-  $('doneNoteText').textContent = (skipped && !failed
-    ? 'Видео оказалось слишком большим для формы.'
-    : 'Не все файлы успели загрузиться.') + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
+function setDone(stage, job, id){
+  const ico = $('doneIco'), title = $('doneTitle'), txt = $('doneText');
+  $('retryBtn').hidden = stage !== 'fail';
+  txt.classList.toggle('warn', stage === 'slow');
+  if (stage === 'sending' || stage === 'slow') {
+    ico.className = 'ok wait'; ico.textContent = '';
+    title.textContent = 'Отправляем заявку…';
+    txt.textContent = stage === 'slow'
+      ? 'Связь медленная — пожалуйста, не закрывайте страницу, заявка ещё отправляется.'
+      : 'Пожалуйста, не закрывайте страницу.';
+    $('doneNum').hidden = true; $('doneNote').hidden = true; $('upl').hidden = true;
+    if (stage === 'sending') go('s-done');
+  } else if (stage === 'ok') {
+    const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp', 'Telegram':'напишем в Telegram' }[job.payload.contact] || 'свяжемся';
+    ico.className = 'ok'; ico.textContent = '✓';
+    title.textContent = 'Заявка принята';
+    txt.innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <span style="white-space:nowrap">${esc(formatPhone(job.payload.phone))}</span>.`;
+    $('doneNum').innerHTML = `Номер заявки: <b>#${esc(id)}</b>`;
+    $('doneNum').hidden = false;
+  } else {
+    ico.className = 'ok bad'; ico.textContent = '!';
+    title.textContent = 'Заявка не отправилась';
+    txt.innerHTML = 'Похоже, пропал интернет. Всё, что вы заполнили, сохранено — нажмите «Отправить ещё раз». Или ' +
+      (inHours() ? `<a href="tel:${esc(CONFIG.phone)}">позвоните нам</a>.` : `<a href="${esc(waHref())}" target="_blank" rel="noopener">напишите в WhatsApp</a>.`);
+    $('doneNum').hidden = true; $('upl').hidden = true;
+    retryJob = job;
+    title.focus({ preventScroll: true });
+  }
+}
+let retryJob = null;
+
+function showNote(id, why){
+  const text = {
+    big:    'Видео оказалось слишком большим для формы.',
+    failed: 'Не все файлы успели загрузиться.',
+    lost:   'Фото, видео и голосовое из прошлой попытки не сохранились.'
+  }[why];
+  $('doneNoteText').textContent = text + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
   $('noteViber').href = viberHref;
   $('noteWa').href = waHref(`Заявка #${id}`);
   $('noteViber').hidden = !CONFIG.viber; $('noteWa').hidden = !CONFIG.whatsapp;
   $('doneNote').hidden = false;
 }
+
+let running = false;
+async function runJob(job, tClick = performance.now()){
+  if (running) return;
+  running = true; guard = true;
+
+  // текст заявки — первым: новые предзагрузки ждут, мелкие текущие уступают канал
+  up.paused = true;
+  up.running.forEach(it => { if (it.size < 5 * MB && it.abort) { it.requeue = true; it.abort(); } });
+
+  // 1) запрос уходит сразу (без await перед fetch)
+  const attempt = (retry, timeout) => {
+    const body = JSON.stringify(Object.assign({}, job.payload, { retry: retry || job.payload.retry }));
+    const p = CONFIG.scriptUrl
+      ? gsPost(body, timeout)
+      : new Promise(res => setTimeout(() => res({ ok: true, id: 'ДЕМО', uploadKey: '', msgId: null }), 600));
+    dbg(`заявка: запрос ушёл через ${(performance.now() - tClick).toFixed(0)} мс после нажатия${retry ? ' (повтор)' : ''}`);
+    return p;
+  };
+  const pending = attempt(false, 15000);
+
+  // 2) экран отправки и «Связь медленная» через 8 с
+  setDone('sending', job);
+  const slowTimer = setTimeout(() => setDone('slow', job), 8000);
+
+  let r = null;
+  try { r = await pending; }
+  catch (e) {
+    if (!(e && ['empty', 'key', 'limit'].includes(e.error))) {
+      try { r = await attempt(true, 15000); } catch (_) { r = null; }     // тот же clientId — дубля не будет
+    }
+  }
+  clearTimeout(slowTimer);
+  busy = false;
+  const btn = $('submit'); btn.disabled = false; btn.textContent = 'Отправить заявку';
+  up.paused = false; pump();
+
+  if (!r || !r.id) {
+    running = false; guard = false;
+    track('submit_fail');
+    setDone('fail', job);
+    dbg('заявка: ошибка отправки');
+    return;
+  }
+  dbg(`заявка: номер #${r.id} получен через ${(performance.now() - tClick).toFixed(0)} мс`);
+  clearPending();
+  track('submit_ok');
+  setDone('ok', job, r.id);
+  requestAnimationFrame(() => dbg(`заявка: интерфейс обновлён через ${(performance.now() - tClick).toFixed(0)} мс`));
+  if (job.lostFiles) showNote(r.id, 'lost');
+
+  ticket = Object.assign({ cid: job.payload.clientId, tClick }, r);
+  if (!job.lostFiles) await deliverAll(job);
+  running = false; guard = false;
+}
+
+// ================= 16. ДОСТАВКА ВЛОЖЕНИЙ ПОСЛЕ НОМЕРА =================
+let uplBase = null;          // что оставалось загрузить в момент получения номера
+function paintUpl(){
+  if (!uplBase) return;
+  const box = $('upl'), bar = $('uplBar'), fill = bar.querySelector('i'), txt = $('uplText');
+  let done = 0;
+  uplBase.forEach(it => {
+    if (['staged', 'committed', 'delivered', 'lost', 'big', 'removed'].includes(it.status)) done += it.size || 1;
+    else if (it.status === 'uploading') done += (it.size || 1) * (it.loaded || 0);
+  });
+  const total = uplBase.reduce((s, it) => s + (it.size || it.file && it.file.size || 1), 0) || 1;
+  const all = live().filter(it => it.status !== 'big');
+  const finished = all.filter(it => ['committed', 'delivered', 'lost'].includes(it.status)).length;
+  const pct = uplBase.length ? Math.max(3, Math.min(99, Math.round(done / total * 100))) : 99;
+  fill.style.width = pct + '%';
+  bar.setAttribute('aria-valuenow', String(pct));
+  txt.textContent = `Загружаем фото, видео и голосовое: ${finished} из ${all.length} — не закрывайте страницу.`;
+  box.hidden = false;
+}
+
+async function commitParts(list, withClaim){
+  if (!list.length && !withClaim) return true;
+  const parts = list.map(it => it.part);
+  let url = `${WORKER}/commit?token=${encodeURIComponent(att.draft.token)}&parts=${parts.join(',')}`;
+  if (withClaim) url += `&id=${ticket.id}&key=${encodeURIComponent(ticket.uploadKey || '')}&cid=${encodeURIComponent(ticket.cid)}&msg=${ticket.msgId || ''}`;
+  const t0 = performance.now();
+  let res = null;
+  try { res = await postJson(url); }
+  catch (_) { try { res = await postJson(url); } catch (_) { res = null; } }
+  if (res && res.ok !== undefined && withClaim && !['key', 'token'].includes(res.error)) claimed = true;
+  const ms = (performance.now() - t0).toFixed(0);
+  for (const it of list) {
+    if (res && res.sent && res.sent.includes(it.part)) {
+      it.path = 'предзагрузка';
+      dbg(`commit ${KIND_NAME[it.kind]} ${it.part}: ${ms} мс`);
+      setStatus(it, 'committed');
+    } else if (it.status === 'staged') {
+      setStatus(it, 'failed');                         // не переслалось — доставим заново запасным путём
+    }
+  }
+  return !!(res && res.ok);
+}
+
+// одно вложение до конца: дождаться готовности → переслать по file_id или доставить запасным путём
+async function settle(it){
+  for (;;) {
+    switch (it.status) {
+      case 'committed': case 'delivered': case 'removed': return true;
+      case 'big': case 'lost': return false;
+      case 'staged':
+        await commitParts([it], !claimed);
+        break;
+      case 'failed':
+        return deliverDirect(it);
+      case 'ready':
+        if (!att.draft || workerDead || it.noPre) return deliverDirect(it);
+        await changed(it);                                   // очередь сама его подхватит
+        break;
+      default:
+        await changed(it);                                   // prep, uploading
+    }
+  }
+}
+
+async function deliverAll(job){
+  await job.voiceP;                                        // если запись дописывалась — дождались
+  const items = live();
+  if (!items.length) return;
+  uplBase = items.filter(it => !['staged', 'committed'].includes(it.status));
+  paintUpl();
+  dbg(`после номера: предзагружено ${items.length - uplBase.length} из ${items.length}`);
+
+  if (att.draft && !workerDead) {
+    // голосовое и видео, которые уже в служебной группе, — сразу (заодно «Worker, вот номер заявки»)
+    const photos = items.filter(it => it.kind === 'img');
+    await commitParts(items.filter(it => it.kind !== 'img' && it.status === 'staged'), true);
+    // фото — одним альбомом: ждём, пока подготовятся все (не дольше 15 с)
+    const pending = () => photos.filter(it => ['prep', 'ready', 'uploading'].includes(it.status));
+    const until = Date.now() + 15000;
+    while (pending().length && Date.now() < until && att.draft && !workerDead) {
+      await Promise.race(pending().map(changed).concat(new Promise(r => setTimeout(r, 500))));
+    }
+    const ready = photos.filter(it => it.status === 'staged');
+    if (ready.length) await commitParts(ready, !claimed);
+  }
+  const results = await Promise.all(items.map(settle));
+  paintUpl();
+  const big = live().some(it => it.status === 'big');
+  const failed = results.some(r => !r) && live().some(it => it.status === 'lost');
+  const t = ((performance.now() - ticket.tClick) / 1000).toFixed(1);
+  dbg(`все вложения: ${failed ? 'не все доставлены' : 'доставлены'} через ${t} с после нажатия`);
+  if (failed) { $('upl').hidden = true; showNote(ticket.id, 'failed'); return; }
+  if (big) showNote(ticket.id, 'big');
+  const box = $('upl'), bar = $('uplBar');
+  box.hidden = false; box.classList.add('fin');
+  bar.querySelector('i').style.width = '100%'; bar.setAttribute('aria-valuenow', '100');
+  $('uplText').textContent = 'Все вложения доставлены ✓';
+}
+
+// запасной путь: загрузка после номера — через Worker с ключом заявки, иначе через Google
+async function deliverDirect(it){
+  const r = ticket;
+  const kind = KIND_NAME[it.kind];
+  const t0 = performance.now();
+  it.loaded = 0;
+  const progress = f => { it.loaded = f; it.status = 'uploading'; paintUpl(); };
+  const auth = `id=${r.id}&key=${encodeURIComponent(r.uploadKey || '')}&cid=${encodeURIComponent(r.cid)}&msg=${r.msgId || ''}&part=${it.part}`;
+  const finish = (path, ok) => {
+    const sec = (performance.now() - t0) / 1000;
+    it.path = path;
+    dbg(`вложение ${kind} ${it.part}: ${ok ? path : 'НЕ ДОСТАВЛЕНО'}, ${(it.size / MB).toFixed(2)} МБ за ${sec.toFixed(1)} с`);
+    setStatus(it, ok ? 'delivered' : 'lost');
+    return ok;
+  };
+  if (!CONFIG.scriptUrl) { await new Promise(res => setTimeout(res, 300)); return finish('демо', true); }
+
+  if (WORKER && !workerDead && !it.noPre) {
+    const send = async () => {
+      if (it.kind === 'img') {
+        const fd = new FormData();
+        fd.append('f0', it.blob, it.name || 'photo.jpg');
+        return (await xhrUpload(`${WORKER}/album?${auth}`, fd, null, progress).promise).ok;
+      }
+      const url = `${WORKER}/file?${auth}&kind=${kind}&name=${encodeURIComponent(it.name || 'file')}`;
+      const type = it.blob.type || 'application/octet-stream';
+      let res = await xhrUpload(url, it.blob, type, progress).promise;
+      if (!res.ok && res.fallback === 'document') res = await xhrUpload(url + '&as=document', it.blob, type, progress).promise;
+      return res.ok;
+    };
+    try { if (await send()) return finish('после номера (Worker)', true); }
+    catch (_) {
+      // ответ мог потеряться, а файл — дойти: спросим, прежде чем слать заново
+      const sent = await askSent(auth);
+      if (sent === true) return finish('после номера (Worker)', true);
+      if (sent === null) { workerDead = true; wakeAll(); }
+      else { try { if (await send()) return finish('после номера (Worker)', true); } catch (_) {} }
+    }
+  }
+  // Google: запасной путь, прогресс примерный
+  if (it.kind === 'vid' && it.size > CONFIG.maxVideoMBSlow * MB) return finish('', false);
+  let f = 0;
+  const tick = setInterval(() => { f += (0.9 - f) * 0.06; progress(f); }, 200);
+  try {
+    const data = await readB64(it.blob);
+    const body = JSON.stringify({ action: 'files', id: r.id, uploadKey: r.uploadKey, clientId: r.cid, part: it.part, kind,
+      files: [{ name: it.name || 'file', mime: it.blob.type || 'application/octet-stream', data }] });
+    try { await gsPost(body, 300000); }
+    catch (e) { if (e && ['key', 'limit', 'empty'].includes(e.error)) throw e; await gsPost(body, 300000); }
+    return finish('Google', true);
+  } catch (_) { return finish('', false); }
+  finally { clearInterval(tick); }
+}
+async function askSent(auth){
+  for (let i = 0; i < 2; i++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    try { return (await (await fetch(`${WORKER}/sent?${auth}`, { signal: ctrl.signal })).json()).sent === true; }
+    catch (_) { if (i === 0) await new Promise(r => setTimeout(r, 2000)); }   // сеть моргнула — пауза и ещё раз
+    finally { clearTimeout(t); }
+  }
+  return null;
+}
+
+// ================= 17. ДЕЙСТВИЯ: одно делегирование кликов =================
+const actions = {
+  'help': () => { go('s-form'); track('open_help'); ensureDraft(); },
+  'back': () => go('s-choice'),
+  'mic': startRecording,
+  'rec-stop': stopRecording,
+  'voice-del': deleteVoice,
+  'add-file': () => $('fileInput').click(),
+  'remove-file': el => removeItem(el.closest('.thumb').dataset.id),
+  'retry': () => { if (retryJob) { retryJob.payload.retry = true; runJob(retryJob); } },
+  'pend-send': () => {
+    const p = loadPending();
+    $('pendBox').hidden = true;
+    if (!p) return;
+    const payload = Object.assign({}, p.payload, { retry: true });
+    if (p.hadFiles) Object.assign(payload, { photos: 0, videos: 0, voice: false, skipped: 0 });
+    runJob({ payload, voiceP: Promise.resolve(null), hadFiles: p.hadFiles, lostFiles: p.hadFiles });
+  },
+  'pend-drop': () => { clearPending(); $('pendBox').hidden = true; }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && actions[el.dataset.act]) { actions[el.dataset.act](el); return; }
+  // статистика по ссылкам
+  const a = e.target.closest('a');
+  if (!a) return;
+  const h = a.getAttribute('href') || '';
+  if (a.id === 'lnkYandex') track('click_yandex');
+  else if (a.id === 'lnkGoogle') track('click_google');
+  else if (h.startsWith('tel:')) track('click_call');
+  else if (h.startsWith('viber:')) track('click_viber');
+  else if (h.includes('wa.me/')) track('click_whatsapp');
+});
+
+// ================= 18. ВЕРНУЛИСЬ С НЕПОДТВЕРЖДЁННОЙ ЗАЯВКОЙ =================
+{
+  const p = loadPending();
+  if (p) {
+    // запрос с keepalive мог дойти — повтор безопасен: сервер узнает заявку по clientId
+    $('pendText').textContent = `Заявка от ${fmt(new Date(p.ts))}. Отправить её ещё раз? Если она уже дошла, второй не будет.` +
+      (p.hadFiles ? ' Фото, видео и голосовое не сохранились — их можно будет прислать в Viber или WhatsApp.' : '');
+    $('pendBox').hidden = false;
+  }
+}
+dbg('страница готова');
 </script>
 </body>
 </html>
