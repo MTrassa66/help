@@ -18,15 +18,14 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font)}
   .wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px}
-  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 22px}
+  header{margin:4px 0 22px}
   .brand{font-weight:700;font-size:15px}
   .brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
-  .post-badge{background:var(--ink);color:#fff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px;white-space:nowrap}
   h1{font-size:27px;line-height:1.2;margin:0 0 18px}
   h2{font-size:22px;line-height:1.25;margin:0 0 6px}
   .screen{display:none}.screen.on{display:block}
 
-  /* выбор */
+  /* экран выбора */
   .choice{border-radius:var(--radius);padding:20px;margin-bottom:14px}
   .choice.good{background:var(--green-bg);border:2px solid var(--green-line)}
   .choice.help{background:var(--red-bg);border:2px solid var(--red-line);display:block;width:100%;text-align:left;
@@ -46,7 +45,7 @@
   .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
   .btn[disabled]{opacity:.6;cursor:default}
   .alt{text-align:center;color:var(--muted);font-size:14px;margin-top:22px}
-  .alt a{color:var(--blue);text-decoration:none;font-weight:600;margin:0 6px;white-space:nowrap}
+  .alt a{display:inline-block;color:var(--blue);text-decoration:none;font-weight:600;margin:4px 6px;white-space:nowrap}
 
   /* форма */
   .card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px}
@@ -63,34 +62,63 @@
   .opt.on{border-color:var(--ink);background:#f6f8fb}
   .opt.on::before{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 5px,#fff 6px)}
 
+  /* выезжающая панель «Другое» */
+  .slide{display:grid;grid-template-rows:0fr;margin-top:-8px;transition:grid-template-rows .28s ease,margin-top .28s ease}
+  .slide.on{grid-template-rows:1fr;margin-top:0}
+  .slide>div{overflow:hidden;min-height:0}
+  .other-inner{border:1.5px solid var(--ink);border-radius:14px;padding:14px;background:#f6f8fb}
+  .other-inner .t{margin-bottom:8px}
+
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;
     font:500 15px var(--font);color:var(--ink);cursor:pointer;min-height:46px}
   .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
-  .chips.posts{display:grid;grid-template-columns:repeat(6,1fr)}
-  .chips.posts .chip{padding:10px 0;text-align:center;font-weight:700;font-size:17px}
   .chips.eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr))}
 
   input[type=text],input[type=tel],input[type=number],input[type=datetime-local],textarea{
     width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:16px var(--font);
     background:#fff;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
   input:focus,textarea:focus{border-color:var(--ink)}
-  textarea{min-height:88px;resize:vertical}
+  textarea{display:block;min-height:88px;resize:vertical}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .hint{color:var(--muted);font-size:13px;margin-top:8px}
   .err{color:var(--red);font-size:14px;margin-top:8px;display:none}
   .err.on{display:block}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 
+  /* кнопки вложений */
+  .addbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;
+    border:1.5px dashed #b9c3d2;background:#fff;color:var(--ink);border-radius:14px;
+    font:600 15px var(--font);cursor:pointer;margin-top:10px}
+  .addbtn[hidden]{display:none}
+  .ico{width:20px;height:20px;flex:none}
+
+  /* голосовое */
+  .rec{display:none;align-items:center;gap:12px;margin-top:10px;background:var(--red-bg);border-radius:14px;padding:8px 8px 8px 14px}
+  .rec.on{display:flex}
+  .rec .dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
+  .rec .time{flex:1;font-weight:600;font-variant-numeric:tabular-nums}
+  .rec button{border:0;background:var(--red);color:#fff;border-radius:10px;padding:10px 14px;font:600 15px var(--font);cursor:pointer}
+  @keyframes pulse{50%{opacity:.25}}
+  .vprev{display:none;align-items:center;gap:8px;margin-top:10px;background:#f6f8fb;border:1.5px solid var(--line);
+    border-radius:14px;padding:6px 6px 6px 10px}
+  .vprev.on{display:flex}
+  .vprev audio{flex:1;min-width:0;height:40px}
+  .vprev button{flex:none;border:0;background:none;color:var(--red);font:600 14px var(--font);padding:8px;cursor:pointer}
+
   .files{display:flex;flex-wrap:wrap;gap:8px}
   .files:not(:empty){margin-top:10px}
-  .thumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:#e5e9f0}
-  .thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:#e5e9f0;
+    display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+  .thumb img,.thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .thumb .tag{position:absolute;left:4px;bottom:4px;background:rgba(15,23,42,.75);color:#fff;font-size:11px;border-radius:6px;padding:1px 5px}
+  .thumb .tag.big{background:var(--red)}
   .thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;
     background:rgba(15,23,42,.75);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
-  .addfile{border:1.5px dashed #b9c3d2;background:#fff;color:var(--ink);border-radius:14px;min-height:56px;width:100%;
-    font:600 15px var(--font);cursor:pointer}
+
+  .check{display:flex;gap:12px;align-items:flex-start;cursor:pointer;font-size:15px}
+  .check input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--ink)}
+  .check small{display:block;color:var(--muted);font-size:13px}
 
   .progress{height:6px;background:#e5e9f0;border-radius:3px;overflow:hidden;margin-top:12px;display:none}
   .progress.on{display:block}
@@ -99,19 +127,25 @@
 
   /* готово */
   .done{text-align:center;padding:30px 20px}
-  .done .ico{width:64px;height:64px;border-radius:50%;background:var(--green-bg);color:var(--green);
+  .done .ok{width:64px;height:64px;border-radius:50%;background:var(--green-bg);color:var(--green);
     display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px}
   .done .num{display:inline-block;margin:14px 0 4px;background:var(--bg);border-radius:12px;padding:8px 14px;font-size:15px;color:var(--muted)}
   .done .num b{color:var(--ink);font-size:18px}
-  .vid-note{background:#fff7e6;border-radius:14px;padding:14px;margin-top:16px;text-align:left;font-size:15px}
-  .vid-note .btn{margin-top:10px}
+  .note{background:#fff7e6;border-radius:14px;padding:14px;margin-top:16px;text-align:left;font-size:15px}
+  .note .row2{margin-top:10px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+</svg>
+
 <div class="wrap">
   <header>
     <div class="brand">Мойка самообслуживания<small>Витебск, ул. Минская 10А</small></div>
-    <div class="post-badge" id="postBadge" hidden></div>
   </header>
 
   <!-- ЭКРАН 1 -->
@@ -148,27 +182,18 @@
 
     <form id="form" novalidate>
       <div class="card">
-        <div class="field">
-          <div class="opts" id="cats"></div>
-          <div class="err" id="e-cat">Выберите, что случилось</div>
-        </div>
+        <div class="opts" id="cats"></div>
+        <div class="err" id="e-cat">Выберите, что случилось</div>
+        <div class="err" id="e-other">Опишите проблему текстом или запишите голосовое</div>
       </div>
 
       <div class="card">
-        <div class="field" id="postField">
-          <span class="t">Номер поста</span>
-          <div class="chips posts" id="posts"></div>
-          <div class="hint">Номер написан над терминалом</div>
-          <div class="err" id="e-post">Выберите пост</div>
+        <span class="t">Когда это было</span>
+        <div class="chips eq" id="whenChips">
+          <button type="button" class="chip on" data-v="now">Только что</button>
+          <button type="button" class="chip" data-v="earlier">Раньше</button>
         </div>
-        <div class="field">
-          <span class="t">Когда это было</span>
-          <div class="chips eq" id="whenChips">
-            <button type="button" class="chip on" data-v="now">Только что</button>
-            <button type="button" class="chip" data-v="earlier">Раньше</button>
-          </div>
-          <input type="datetime-local" id="whenInput" style="display:none;margin-top:10px" aria-label="Дата и время">
-        </div>
+        <input type="datetime-local" id="whenInput" style="display:none;margin-top:10px" aria-label="Дата и время">
       </div>
 
       <div class="card">
@@ -189,18 +214,24 @@
             <button type="button" class="chip" data-v="Карта / телефон">Карта / телефон</button>
           </div>
         </div>
-        <div class="field">
-          <label class="t" for="comment">Подробнее <i>— по желанию</i></label>
-          <textarea id="comment" maxlength="1000" placeholder="Например: внёс 5 рублей, на экране осталось 0"></textarea>
-        </div>
       </div>
 
+      <!-- подробнее: текст + голосовое + фото/видео -->
       <div class="card">
-        <span class="t">Фото или видео <i>— по желанию</i></span>
-        <button type="button" class="addfile" id="addFile">＋ Добавить фото или видео</button>
+        <span class="t" id="detailsTitle">Подробнее <i>— по желанию</i></span>
+        <div id="describeHome">
+          <div id="describe">
+            <textarea id="comment" maxlength="2000"></textarea>
+            <button type="button" class="addbtn" id="micBtn"><svg class="ico"><use href="#i-mic"/></svg>Записать голосовое</button>
+            <div class="rec" id="rec"><span class="dot"></span><span class="time" id="recTime">0:00</span><button type="button" id="recStop">Готово</button></div>
+            <div class="vprev" id="vprev"><audio id="vaudio" controls preload="metadata"></audio><button type="button" id="vdel">Удалить</button></div>
+            <div class="hint" id="micHint" hidden></div>
+          </div>
+        </div>
+        <button type="button" class="addbtn" id="addFile"><svg class="ico"><use href="#i-cam"/></svg>Добавить фото или видео</button>
         <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
         <div class="files" id="files"></div>
-        <div class="hint" id="fileHint">Например, экран терминала. До 3 фото и одно короткое видео.</div>
+        <div class="hint" id="fileHint"></div>
       </div>
 
       <div class="card">
@@ -213,6 +244,11 @@
           <span class="t">Как удобнее связаться</span>
           <div class="chips eq" id="contact"></div>
         </div>
+        <div class="field">
+          <label class="check"><input type="checkbox" id="promo">
+            <span>Присылать акции и бонусы мойки<small>Не чаще пары раз в месяц. Отписаться можно в любой момент.</small></span>
+          </label>
+        </div>
       </div>
 
       <input type="text" name="website" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -220,20 +256,23 @@
       <button class="btn red" id="submit" type="submit">Отправить заявку</button>
       <div class="progress" id="progress"><i></i></div>
       <div class="err" id="e-send" style="text-align:center"></div>
-      <p class="privacy">Телефон нужен только для связи по этой заявке.</p>
+      <p class="privacy">Телефон нужен для связи по заявке. Акции присылаем, только если вы отметили галочку.</p>
     </form>
   </section>
 
   <!-- ЭКРАН 3 -->
   <section class="screen" id="s-done">
     <div class="card done">
-      <div class="ico">✓</div>
+      <div class="ok">✓</div>
       <h2>Заявка принята</h2>
       <p class="lead" style="margin:0" id="doneText"></p>
       <div class="num" id="doneNum"></div>
-      <div class="vid-note" id="vidNote" hidden>
-        Видео оказалось слишком большим для формы. Отправьте его нам в Viber и укажите номер заявки.
-        <a class="btn ghost" id="vidViber">Отправить видео в Viber</a>
+      <div class="note" id="doneNote" hidden>
+        <span id="doneNoteText"></span>
+        <div class="row2">
+          <a class="btn ghost" id="noteViber">Viber</a>
+          <a class="btn ghost" id="noteWa" target="_blank" rel="noopener">WhatsApp</a>
+        </div>
       </div>
     </div>
   </section>
@@ -247,12 +286,14 @@ const CONFIG = {
   googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
   phone:     '+375296400339',     // рабочий номер для звонков
   viber:     '+375296400339',     // номер с Viber
-  telegram:  '',                  // username без @ (необязательно)
-  responseMinutes: 15,            // за сколько минут отвечаете
+  whatsapp:  '+375296400339',     // номер с WhatsApp
+  telegram:  '',                  // username без @ — пока выключен
+  responseMinutes: 15,
   hours: { from: 8, to: 22 },     // когда отвечаете; вне этих часов номер телефона скрыт
-  posts: 6,
-  maxPhotos: 3,
-  maxVideoMB: 25,
+  maxPhotos: 10,                  // защита группы от флуда
+  maxVideos: 3,
+  maxVideoMB: 25,                 // технический предел Google + Telegram
+  maxVoiceSec: 180,
   categories: [
     'Терминал не зачислил деньги',
     'Не включилась программа',
@@ -265,16 +306,14 @@ const CONFIG = {
 /* =========================================================== */
 
 const $ = id => document.getElementById(id);
-const state = { post:null, cat:null, when:'now', pay:null, contact:'Звонок', files:[], bigVideo:false };
+const OTHER = 'Другое';
+const state = { post:'', cat:null, when:'now', pay:null, contact:'Звонок', files:[], voice:null };
 
-// ---- пост из QR: ?post=3
+// пост берётся из ссылки QR: ?post=3 (клиенту не показывается)
 const qp = new URLSearchParams(location.search).get('post');
-if (qp && +qp >= 1 && +qp <= CONFIG.posts) {
-  state.post = String(+qp);
-  $('postBadge').textContent = 'Пост ' + state.post; $('postBadge').hidden = false;
-}
+if (qp && /^\d{1,2}$/.test(qp)) state.post = String(+qp);
 
-// ---- срок ответа с учётом рабочих часов
+// ---- рабочие часы
 function inHours(){
   if (!CONFIG.hours) return true;
   const h = new Date().getHours();
@@ -287,13 +326,16 @@ document.querySelectorAll('.reply-short').forEach(el => el.textContent = replySh
 // ---- ссылки
 $('lnkYandex').href = CONFIG.yandexUrl;
 $('lnkGoogle').href = CONFIG.googleUrl;
+const digitsOf = v => String(v).replace(/\D/g,'');
 const viberHref = `viber://chat?number=${encodeURIComponent(CONFIG.viber)}`;
+const waHref = text => `https://wa.me/${digitsOf(CONFIG.whatsapp)}` + (text ? `?text=${encodeURIComponent(text)}` : '');
+const tgHref = CONFIG.telegram ? `https://t.me/${CONFIG.telegram}` : '';
 const alt = [];
 if (inHours()) alt.push(`<a href="tel:${CONFIG.phone}">Позвонить</a>`);
-alt.push(`<a href="${viberHref}">Viber</a>`);
-if (CONFIG.telegram) alt.push(`<a href="https://t.me/${CONFIG.telegram}" target="_blank" rel="noopener">Telegram</a>`);
+if (CONFIG.viber) alt.push(`<a href="${viberHref}">Viber</a>`);
+if (CONFIG.whatsapp) alt.push(`<a href="${waHref()}" target="_blank" rel="noopener">WhatsApp</a>`);
+if (tgHref) alt.push(`<a href="${tgHref}" target="_blank" rel="noopener">Telegram</a>`);
 $('altContacts').innerHTML = 'Удобнее напрямую? ' + alt.join('');
-$('vidViber').href = viberHref;
 
 // ---- навигация
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); scrollTo(0,0); }
@@ -307,15 +349,43 @@ function group(container, cls, items, key, onPick){
   container.querySelectorAll('.' + cls).forEach(c => c.onclick = () => {
     container.querySelectorAll('.' + cls).forEach(x => x.classList.remove('on'));
     c.classList.add('on'); state[key] = c.dataset.v;
-    const e = { post:'e-post', cat:'e-cat' }[key]; if (e) $(e).classList.remove('on');
     if (onPick) onPick(state[key]);
   });
 }
-group($('cats'), 'opt', CONFIG.categories, 'cat');
-if (state.post) $('postField').hidden = true;
-group($('posts'), 'chip', Array.from({length:CONFIG.posts}, (_,i) => String(i+1)), 'post');
+
+// категории + выезжающая панель «Другое»
+group($('cats'), 'opt', CONFIG.categories, 'cat', v => {
+  $('e-cat').classList.remove('on'); $('e-other').classList.remove('on');
+  setOther(v === OTHER);
+});
+const slide = document.createElement('div');
+slide.className = 'slide'; slide.id = 'otherSlide';
+slide.innerHTML = '<div><div class="other-inner"><span class="t">Опишите, что случилось</span><div id="otherSlot"></div></div></div>';
+$('cats').appendChild(slide);
+
+let otherOn = null;
+function setOther(on){
+  if (on === otherOn) return; otherOn = on;
+  slide.classList.toggle('on', on);
+  if (on) {
+    $('otherSlot').appendChild($('describe'));
+    $('comment').placeholder = 'Напишите текстом или запишите голосовое';
+    $('detailsTitle').innerHTML = 'Фото или видео <i>— по желанию</i>';
+    setTimeout(() => slide.scrollIntoView({behavior:'smooth', block:'nearest'}), 300);
+  } else {
+    $('describeHome').appendChild($('describe'));
+    $('comment').placeholder = 'Например: внёс 5 рублей, на экране осталось 0';
+    $('detailsTitle').innerHTML = 'Подробнее <i>— по желанию</i>';
+  }
+}
+setOther(false);
+$('comment').addEventListener('input', () => $('e-other').classList.remove('on'));
+
 group($('pay'), 'chip', null, 'pay');
-group($('contact'), 'chip', CONFIG.telegram ? ['Звонок','Viber','Telegram'] : ['Звонок','Viber'], 'contact');
+const contactOpts = ['Звонок']
+  .concat(CONFIG.viber ? ['Viber'] : [], CONFIG.whatsapp ? ['WhatsApp'] : [], CONFIG.telegram ? ['Telegram'] : []);
+$('contact').style.gridTemplateColumns = `repeat(${contactOpts.length <= 3 ? contactOpts.length : 2},1fr)`;
+group($('contact'), 'chip', contactOpts, 'contact');
 group($('whenChips'), 'chip', null, 'when', v => {
   const inp = $('whenInput'); inp.style.display = v === 'earlier' ? 'block' : 'none';
   if (v === 'earlier' && !inp.value) {
@@ -326,7 +396,7 @@ group($('whenChips'), 'chip', null, 'when', v => {
 
 // ---- телефон: +375 (29) 123-45-67
 function phoneDigits(v){
-  let d = v.replace(/\D/g,'');
+  let d = digitsOf(v);
   if (d.startsWith('80')) d = '375' + d.slice(2);
   return d;
 }
@@ -353,29 +423,103 @@ function phoneValid(v){
   return d.startsWith('375') ? d.length === 12 : d.length >= 10 && d.length <= 15;
 }
 
-// ---- файлы
-$('addFile').onclick = () => $('fileInput').click();
-$('fileInput').onchange = e => { [...e.target.files].forEach(addFile); e.target.value = ''; renderFiles(); };
-let fileMsg = '';
-function addFile(f){
-  const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/');
-  if (!isVid && !isImg) return;
-  if (isImg && state.files.filter(x => x.kind==='img').length >= CONFIG.maxPhotos) { fileMsg = `Можно приложить до ${CONFIG.maxPhotos} фото`; return; }
-  if (isVid && state.files.some(x => x.kind==='vid')) { fileMsg = 'Можно приложить одно видео'; return; }
-  state.files.push({ file:f, kind: isVid ? 'vid' : 'img', url: URL.createObjectURL(f) });
+// ---- голосовое
+const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+if (!canRecord) $('micBtn').hidden = true;
+const rec = { mr:null, stream:null, chunks:[], t0:0, tick:null };
+function pickMime(){
+  const list = ['audio/ogg;codecs=opus','audio/mp4','audio/webm;codecs=opus','audio/webm'];
+  if (!MediaRecorder.isTypeSupported) return '';
+  return list.find(m => MediaRecorder.isTypeSupported(m)) || '';
 }
-function renderFiles(){
-  const vid = state.files.find(x => x.kind==='vid');
-  let h = fileMsg || 'Например, экран терминала. До 3 фото и одно короткое видео.';
-  if (vid && vid.file.size > CONFIG.maxVideoMB*1048576) h = 'Видео большое — после отправки заявки предложим переслать его в Viber.';
-  $('fileHint').textContent = h; fileMsg = '';
+const fmtSec = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function micMsg(t){ $('micHint').textContent = t; $('micHint').hidden = !t; }
+
+$('micBtn').onclick = async () => {
+  micMsg('');
+  try {
+    rec.stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  } catch(_) {
+    micMsg('Нет доступа к микрофону. Разрешите его в настройках браузера или опишите проблему текстом.');
+    return;
+  }
+  const mime = pickMime();
+  try { rec.mr = mime ? new MediaRecorder(rec.stream, { mimeType: mime }) : new MediaRecorder(rec.stream); }
+  catch(_) { rec.mr = new MediaRecorder(rec.stream); }
+  rec.chunks = [];
+  rec.mr.ondataavailable = e => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+  rec.mr.onstop = () => {
+    clearInterval(rec.tick);
+    rec.stream.getTracks().forEach(t => t.stop());
+    const type = (rec.mr.mimeType || mime || 'audio/webm').split(';')[0];
+    const blob = new Blob(rec.chunks, { type });
+    $('rec').classList.remove('on');
+    if (blob.size < 500) { $('micBtn').hidden = false; micMsg('Запись не получилась — попробуйте ещё раз.'); return; }
+    const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
+    if (state.voice) URL.revokeObjectURL(state.voice.url);
+    state.voice = { blob, type, name: 'voice.' + ext, url: URL.createObjectURL(blob) };
+    $('vaudio').src = state.voice.url;
+    $('vprev').classList.add('on');
+    $('e-other').classList.remove('on');
+  };
+  rec.mr.start(1000);
+  rec.t0 = Date.now();
+  $('micBtn').hidden = true; $('rec').classList.add('on'); $('recTime').textContent = '0:00';
+  rec.tick = setInterval(() => {
+    const s = Math.floor((Date.now() - rec.t0) / 1000);
+    $('recTime').textContent = fmtSec(s) + ' / ' + fmtSec(CONFIG.maxVoiceSec);
+    if (s >= CONFIG.maxVoiceSec && rec.mr.state === 'recording') rec.mr.stop();
+  }, 250);
+};
+$('recStop').onclick = () => { if (rec.mr && rec.mr.state !== 'inactive') rec.mr.stop(); };
+$('vdel').onclick = () => {
+  if (state.voice) URL.revokeObjectURL(state.voice.url);
+  state.voice = null; $('vaudio').removeAttribute('src');
+  $('vprev').classList.remove('on'); $('micBtn').hidden = !canRecord;
+};
+// дождаться, пока запись допишется (если нажали «Отправить» во время записи)
+function finishRecording(){
+  return new Promise(res => {
+    if (!rec.mr || rec.mr.state === 'inactive') return res();
+    const prev = rec.mr.onstop;
+    rec.mr.onstop = ev => { prev(ev); res(); };
+    rec.mr.stop();
+  });
+}
+
+// ---- фото и видео
+const MB = 1048576;
+const DEFAULT_HINT = `Видео — до ${CONFIG.maxVideoMB} МБ (примерно 20–30 секунд).`;
+$('addFile').onclick = () => $('fileInput').click();
+$('fileInput').onchange = e => {
+  let msg = '';
+  [...e.target.files].forEach(f => {
+    const isVid = f.type.startsWith('video/') || /\.(mov|mp4|m4v|3gp|avi|mkv|webm)$/i.test(f.name);
+    const isImg = !isVid && (f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name));
+    if (!isVid && !isImg) return;
+    const kind = isVid ? 'vid' : 'img';
+    const count = state.files.filter(x => x.kind === kind).length;
+    if (kind === 'img' && count >= CONFIG.maxPhotos) { msg = `Можно приложить до ${CONFIG.maxPhotos} фото.`; return; }
+    if (kind === 'vid' && count >= CONFIG.maxVideos) { msg = `Можно приложить до ${CONFIG.maxVideos} видео.`; return; }
+    state.files.push({ file:f, kind, big: isVid && f.size > CONFIG.maxVideoMB*MB, url: URL.createObjectURL(f) });
+  });
+  e.target.value = ''; renderFiles(msg);
+};
+function renderFiles(msg){
+  const big = state.files.some(x => x.big);
+  $('fileHint').textContent = msg || (big
+    ? `Видео больше ${CONFIG.maxVideoMB} МБ не пройдёт через форму — после отправки заявки предложим переслать его в Viber или WhatsApp.`
+    : DEFAULT_HINT);
   $('files').innerHTML = state.files.map((x,i) => `<div class="thumb">${x.kind==='img'
-      ? `<img src="${x.url}" alt="">` : `<video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><span class="tag">видео</span>`}
+      ? `фото<img src="${x.url}" alt="" onerror="this.remove()">`
+      : `видео<video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><span class="tag${x.big?' big':''}">${x.big?'большое':'видео'}</span>`}
       <button type="button" data-i="${i}" aria-label="Удалить">×</button></div>`).join('');
   $('files').querySelectorAll('button').forEach(b => b.onclick = () => {
     URL.revokeObjectURL(state.files[b.dataset.i].url); state.files.splice(+b.dataset.i,1); renderFiles();
   });
 }
+renderFiles();
+
 function compressImage(file){
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
@@ -383,7 +527,7 @@ function compressImage(file){
       const k = Math.min(1, 1600 / Math.max(img.width, img.height));
       const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-      res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+      res(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(); };
     img.src = url;
@@ -393,70 +537,123 @@ const readB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.o
 
 // ---- отправка
 const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
+
+function post(body, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', CONFIG.scriptUrl);
+    xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+    xhr.timeout = 300000;
+    if (onProgress) xhr.upload.onprogress = ev => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
+    xhr.onload = () => { let r = {}; try { r = JSON.parse(xhr.responseText); } catch(_) {} r.ok ? resolve(r) : reject(r); };
+    xhr.onerror = xhr.ontimeout = () => reject({});
+    xhr.send(body);
+  });
+}
+async function postRetry(body, onProgress){
+  try { return await post(body, onProgress); }
+  catch(_) { return await post(body, onProgress); }
+}
+function demoPost(body, onProgress){
+  return new Promise(res => { let p = 0; const t = setInterval(() => { p += .25; onProgress && onProgress(Math.min(p,1)); if (p >= 1) { clearInterval(t); res({ ok:true, id:'ДЕМО' }); } }, 80); });
+}
+
+let sending = false;
 $('form').onsubmit = async e => {
   e.preventDefault();
+  if (sending) return;
+  await finishRecording();
   let ok = true;
-  if (!state.cat)  { $('e-cat').classList.add('on');  ok = false; }
-  if (!state.post) { $('e-post').classList.add('on'); ok = false; }
+  if (!state.cat) { $('e-cat').classList.add('on'); ok = false; }
+  if (state.cat === OTHER && !$('comment').value.trim() && !state.voice) { $('e-other').classList.add('on'); ok = false; }
   if (!phoneValid($('phone').value)) { $('e-phone').classList.add('on'); ok = false; }
   if (!ok) { document.querySelector('.err.on').scrollIntoView({behavior:'smooth', block:'center'}); return; }
 
+  sending = true;
   const btn = $('submit'); btn.disabled = true; btn.textContent = 'Готовим файлы…'; $('e-send').classList.remove('on');
-  const when = state.when === 'now'
-    ? `только что (${fmt(new Date())})`
-    : ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше');
+  const bar = $('progress'), fill = bar.querySelector('i'); bar.classList.add('on'); fill.style.width = '2%';
+  const send = CONFIG.scriptUrl ? postRetry : demoPost;
 
-  const files = []; state.bigVideo = false;
+  // 1. готовим вложения
+  const photos = [], videos = [], skipped = [];
   for (const x of state.files) {
-    try {
-      if (x.kind === 'img') {
-        try { files.push({ name:'photo.jpg', mime:'image/jpeg', data: await compressImage(x.file) }); }
-        catch(_) { if (x.file.size < 10*1048576) files.push({ name: x.file.name || 'photo', mime: x.file.type, data: await readB64(x.file) }); }
-      } else if (x.file.size <= CONFIG.maxVideoMB*1048576) {
-        files.push({ name: x.file.name || 'video.mp4', mime: x.file.type || 'video/mp4', data: await readB64(x.file) });
-      } else state.bigVideo = true;
-    } catch(_) {}
+    if (x.kind === 'img') {
+      try { photos.push({ name:'photo.jpg', mime:'image/jpeg', data: await compressImage(x.file) }); }
+      catch(_) {
+        if (x.file.size <= 15*MB) photos.push({ name: x.file.name || 'photo.heic', mime: x.file.type || 'image/heic', data: await readB64(x.file) });
+        else skipped.push('фото');
+      }
+    } else if (x.big) skipped.push('видео');
+    else videos.push(x);
   }
 
   const d = phoneDigits($('phone').value);
-  send({
-    post: state.post, category: state.cat, when,
+  const payload = {
+    action:'create', post: state.post, category: state.cat,
+    when: state.when === 'now' ? `только что (${fmt(new Date())})` : ($('whenInput').value ? fmt(new Date($('whenInput').value)) : 'раньше'),
     amount: $('amount').value.trim(), payment: state.pay || '',
     plate: $('plate').value.trim().toUpperCase(), comment: $('comment').value.trim(),
-    phone: '+' + d, contact: state.contact,
-    files, bigVideo: state.bigVideo, website: $('website').value
-  });
+    phone: '+' + d, contact: state.contact, promo: $('promo').checked,
+    photos: photos.length, videos: videos.length, voice: !!state.voice, skipped: skipped.length,
+    website: $('website').value
+  };
+
+  // 2. шаги отправки вложений (вес — примерный размер)
+  const steps = [];
+  for (let i = 0; i < photos.length; i += 10) {
+    const part = photos.slice(i, i + 10);
+    steps.push({ kind:'photo', weight: part.reduce((s,p) => s + p.data.length, 0), get: async () => part });
+  }
+  videos.forEach(v => steps.push({ kind:'video', weight: v.file.size * 1.34,
+    get: async () => [{ name: v.file.name || 'video.mp4', mime: v.file.type || 'video/mp4', data: await readB64(v.file) }] }));
+  if (state.voice) steps.push({ kind:'voice', weight: state.voice.blob.size * 1.34,
+    get: async () => [{ name: state.voice.name, mime: state.voice.type, data: await readB64(state.voice.blob) }] });
+
+  const total = 3000 + steps.reduce((s,x) => s + x.weight, 0);
+  let doneW = 0;
+  const setP = (w, frac) => fill.style.width = Math.max(2, Math.round((doneW + w*frac) / total * 97)) + '%';
+
+  // 3. создаём заявку
   btn.textContent = 'Отправляем…';
+  let id;
+  try { id = (await send(JSON.stringify(payload), f => setP(3000, f))).id; }
+  catch(_) { sending = false; return fail(); }
+  doneW += 3000;
+
+  // 4. вложения — отдельными запросами, чтобы большой файл не сорвал всю заявку
+  let failed = 0, n = 0;
+  for (const s of steps) {
+    n++; btn.textContent = steps.length > 1 ? `Загружаем файлы: ${n} из ${steps.length}` : 'Загружаем файл…';
+    try {
+      const files = await s.get();
+      await send(JSON.stringify({ action:'files', id, kind: s.kind, files }), f => setP(s.weight, f));
+    } catch(_) { failed++; }
+    doneW += s.weight; setP(0, 0);
+  }
+  done(id, payload, skipped.length, failed);
 };
 
-function send(payload){
-  const bar = $('progress'), fill = bar.querySelector('i'); bar.classList.add('on'); fill.style.width = '3%';
-  if (!CONFIG.scriptUrl) { // демо-режим
-    let p = 0; const t = setInterval(() => { p += 20; fill.style.width = p + '%'; if (p >= 100) { clearInterval(t); done('ДЕМО', payload); } }, 150);
-    return;
-  }
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', CONFIG.scriptUrl);
-  xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
-  xhr.timeout = 180000;
-  xhr.upload.onprogress = ev => { if (ev.lengthComputable) fill.style.width = Math.max(3, Math.round(ev.loaded/ev.total*95)) + '%'; };
-  xhr.onload = () => { let r = {}; try { r = JSON.parse(xhr.responseText); } catch(_) {} r.ok ? done(r.id, payload) : fail(); };
-  xhr.onerror = xhr.ontimeout = fail;
-  xhr.send(JSON.stringify(payload));
-}
-function done(id, p){
+function done(id, p, skipped, failed){
   $('progress').querySelector('i').style.width = '100%';
-  const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'Telegram':'напишем в Telegram' }[p.contact] || 'свяжемся';
+  const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp', 'Telegram':'напишем в Telegram' }[p.contact] || 'свяжемся';
   $('doneText').innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <span style="white-space:nowrap">${formatPhone(p.phone)}</span>.`;
   $('doneNum').innerHTML = `Номер заявки: <b>#${id}</b>`;
-  $('vidNote').hidden = !state.bigVideo;
+  if (skipped || failed) {
+    $('doneNoteText').textContent = (skipped && !failed
+      ? 'Видео оказалось слишком большим для формы.'
+      : 'Не все файлы успели загрузиться.') + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
+    $('noteViber').href = viberHref;
+    $('noteWa').href = waHref(`Заявка #${id}`);
+    $('noteViber').hidden = !CONFIG.viber; $('noteWa').hidden = !CONFIG.whatsapp;
+    $('doneNote').hidden = false;
+  }
   go('s-done');
 }
 function fail(){
   const btn = $('submit'); btn.disabled = false; btn.textContent = 'Отправить ещё раз';
   $('progress').classList.remove('on');
   $('e-send').innerHTML = `Не получилось отправить — проверьте интернет и попробуйте ещё раз. Или ` +
-    (inHours() ? `<a href="tel:${CONFIG.phone}">позвоните нам</a>.` : `<a href="${viberHref}">напишите нам в Viber</a>.`);
+    (inHours() ? `<a href="tel:${CONFIG.phone}">позвоните нам</a>.` : `<a href="${waHref()}" target="_blank" rel="noopener">напишите в WhatsApp</a>.`);
   $('e-send').classList.add('on');
 }
 </script>
