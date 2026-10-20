@@ -538,17 +538,24 @@ const readB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.o
 // ---- отправка
 const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
 
-function post(body, onProgress){
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', CONFIG.scriptUrl);
-    xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
-    xhr.timeout = 300000;
-    if (onProgress) xhr.upload.onprogress = ev => { if (ev.lengthComputable) onProgress(ev.loaded / ev.total); };
-    xhr.onload = () => { let r = {}; try { r = JSON.parse(xhr.responseText); } catch(_) {} r.ok ? resolve(r) : reject(r); };
-    xhr.onerror = xhr.ontimeout = () => reject({});
-    xhr.send(body);
-  });
+// Важно: без отслеживания загрузки (upload progress) — иначе браузер шлёт
+// предварительный CORS-запрос, на который Google Apps Script не отвечает.
+async function post(body, onProgress){
+  let f = 0;
+  const t = onProgress ? setInterval(() => { f += (0.9 - f) * 0.08; onProgress(f); }, 200) : null;
+  try {
+    const ctrl = new AbortController();
+    const kill = setTimeout(() => ctrl.abort(), 300000);
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: 'POST', body, signal: ctrl.signal,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+    clearTimeout(kill);
+    const r = await res.json();
+    if (!r.ok) throw r;
+    if (onProgress) onProgress(1);
+    return r;
+  } finally { if (t) clearInterval(t); }
 }
 async function postRetry(body, onProgress){
   try { return await post(body, onProgress); }
