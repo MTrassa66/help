@@ -821,6 +821,12 @@ function beacon(obj){
   } catch (_) {}
 }
 const track = (event, extra) => beacon(Object.assign({ action:'event', event, post, sid: SID, t: Date.now() }, extra));
+// v7: шаги визита — один раз за визит на каждый шаг (для листа «Визиты» и сводки дня)
+const trackOnce = (event, key, extra) => {
+  const k = 'moika_ev_' + event + ':' + (key || '');
+  try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (_) {}
+  track(event, extra);
+};
 function pingGoogle(){
   if (CONFIG.scriptUrl) fetch(CONFIG.scriptUrl + '?ping=1', { mode:'no-cors' }).catch(() => {});
 }
@@ -1031,6 +1037,7 @@ function layout(view){
   $('sendbar').hidden = !fields;
   if (selfhelp && !state.shownSelfhelp) { state.shownSelfhelp = true; track('selfhelp_shown'); }
   if (!fields) return;
+  trackOnce('form_view', c, { cat: c });
 
   const cat = CAT[c];
   const quiet = isProgram(c);                       // подтип программы — тихая строка вместо жёлтой плашки
@@ -1106,12 +1113,14 @@ function selectCat(id){
     resetForm();
   }
   ensureDraft();                                     // черновой ключ для предзагрузки — когда клиент выбрал проблему
+  trackOnce('cat_pick', id, { cat: id });
   showErr('e-cat', false);
   if (CAT[id].sub) { navTo('sub'); return; }        // «Проблема с программой» → «Что именно?»
   state.cat = id;
   navTo('form');
 }
 function selectSub(id){
+  trackOnce('cat_pick', id, { cat: id });
   if (state.cat !== id) state.shownSelfhelp = false;
   state.cat = id;
   navTo(CAT[id].selfhelp && !state.selfhelpTried ? 'selfhelp' : 'form');
@@ -1130,7 +1139,7 @@ form.addEventListener('change', e => {
 form.addEventListener('input', e => {
   const t = e.target;
   if (t.id !== 'phone') paintSend();
-  if (t.id === 'phone') onPhoneInput(t, e);
+  if (t.id === 'phone') { onPhoneInput(t, e); if (digitsOf(t.value).length) trackOnce('phone_start', '', { cat: state.cat }); }
   else if (t.id === 'comment') showErr('e-other', false);
   else if (t.id === 'otherNote') paintMoney();
 });
@@ -2226,7 +2235,7 @@ async function runJob(job, tClick = performance.now()){
   }
   dbg(`заявка: номер #${r.id} получен через ${(performance.now() - tClick).toFixed(0)} мс (${via})`);
   clearPending();
-  track('submit_ok');
+  track('submit_ok', { ticket: r.id, cat: state.cat });
   failedCid = '';
   // заявка принята: записи формы в истории больше не действуют, «назад» — на главный
   nav.submitted = true;
