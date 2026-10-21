@@ -488,7 +488,10 @@ async function cleanStaging(env) {
 
 // ================= ЗАЯВКА: ВХОД ЧЕРЕЗ WORKER (v6) =================
 
-const desk = env => env.DESK ? env.DESK.get(env.DESK.idFromName('main')) : null;
+// locationHint: счётчик создаётся там, где к нему обратились впервые, и больше не переезжает.
+// Первым его вызовет setup() с серверов Google в США — без подсказки счётчик оказался бы за океаном.
+// 'eeur' — Восточная Европа, ближе к Витебску (подсказка действует только при самом первом создании).
+const desk = env => env.DESK ? env.DESK.get(env.DESK.idFromName('main'), { locationHint: 'eeur' }) : null;
 const cleanCid = v => String(v || '').replace(/[^\w\-]/g, '').slice(0, 64);
 
 // msgId сообщения о заявке: Durable Object отправляет его в фоне — подождём до 4 с
