@@ -129,7 +129,6 @@
   .cat:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
   .plaque{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 6px 6px 14px;background:var(--yellow);color:var(--on-yellow);
     border-radius:6px 6px 0 0;font:900 15px/1.2 var(--font);text-transform:uppercase}
-  .plaque.solo{border-radius:6px}
   .plaque svg{flex:none;width:24px;height:24px}
   .plaque h2{flex:1;font:inherit}
   .change{all:unset;cursor:pointer;font:800 12px var(--font);text-decoration:underline;text-underline-offset:3px;padding:14px 10px;text-transform:uppercase}
@@ -141,7 +140,6 @@
   .pause .p{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;font:900 9px var(--font);letter-spacing:.1em;color:var(--text);text-transform:uppercase}
   .pbtn{display:block;width:40px;height:40px;border-radius:50%;border:4px solid #4A1616;
     background:radial-gradient(circle at 40% 35%,#FF7A7A 0%,#E8262B 45%,#9E1418 100%);box-shadow:0 0 12px rgba(232,38,43,.55)}
-  .pbtn.sm{width:30px;height:30px;border-width:3px}
   .pause b{display:block;font:900 15px/1.2 var(--font);color:var(--yellow);text-transform:uppercase}
   .pause span.d{display:block;margin-top:4px;font-size:13px;color:var(--soft)}
 
@@ -225,15 +223,28 @@
   .thumb button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(11,11,12,.85);
     color:var(--text);font-size:17px;line-height:28px;padding:0;cursor:pointer}
 
-  /* самопомощь */
-  .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
-  .steps li{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
-  .steps .num{width:36px;height:36px;font-size:16px}
-  .steps .tx{flex:1;display:flex;flex-direction:column;gap:3px}
-  .steps b{font:900 16px/1.2 var(--font);text-transform:uppercase}
-  .steps span.d{font-size:13px;color:var(--muted);line-height:1.35}
-  .sh-head{display:flex;flex-direction:column;gap:6px;padding:0 4px}
-  .sh-head p{margin:0;color:var(--muted);font-size:14px}
+  /* самопомощь — «наклейка терминала»: жёлтый на экране только у плашки шагов */
+  .sh-cat{margin:-6px 0 0;padding:0 4px;font:600 13px/1.3 var(--sys);color:var(--muted)}
+  .sh-cat button{all:unset;cursor:pointer;display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:0 -6px;
+    font:800 13px var(--sys);color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+  .sh-cat button:focus-visible{outline:2px solid var(--yellow);outline-offset:-4px;border-radius:4px}
+  .sticker{position:relative;background:var(--yellow);color:var(--on-yellow);border-radius:8px;padding:22px 18px 20px;display:flex;flex-direction:column;gap:16px}
+  .sticker .screw{position:absolute;width:7px;height:7px;border-radius:50%;background:#8A8A6A}
+  .sticker .screw.tl{top:8px;left:8px}.sticker .screw.tr{top:8px;right:8px}
+  .sticker .screw.bl{bottom:8px;left:8px}.sticker .screw.br{bottom:8px;right:8px}
+  .sticker h1{padding:0;font:900 26px/1.1 var(--font);color:var(--on-yellow)}
+  .sticker .sub{margin:-10px 0 0;font:700 13px/1.35 var(--font)}
+  .ysteps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}
+  .ysteps li{display:flex;gap:12px;align-items:center}
+  .ysteps .n{flex:none;width:38px;height:38px;border-radius:50%;background:var(--on-yellow);color:var(--yellow);
+    display:flex;align-items:center;justify-content:center;font:900 18px var(--font)}
+  .ysteps .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+  .ysteps b{font:900 18px/1.15 var(--font);text-transform:uppercase}
+  .ysteps span.d{font:700 13px/1.35 var(--font)}
+  .ysteps .pbtn{flex:none;width:34px;height:34px;border:4px solid var(--on-yellow);box-shadow:none}
+  .btn-g{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;width:100%;
+    min-height:56px;padding:6px 14px;border:2px solid var(--dash);border-radius:6px;color:var(--text);font:900 16px/1.2 var(--font);text-transform:uppercase}
+  .btn-g:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
   .acts{display:flex;flex-direction:column;gap:10px;margin-top:auto;width:100%}
   #form{flex:1;display:flex;flex-direction:column;gap:16px}
   #rest,#selfHelp{gap:16px;flex:1}
@@ -403,16 +414,19 @@
         </div>
       </div>
 
-      <!-- «Не включилась программа»: самопомощь -->
+      <!-- «Не включилась программа»: самопомощь — «наклейка терминала» -->
       <div id="selfHelp" class="field" hidden>
-        <div class="sh-head">
-          <h2 id="shTitle"></h2>
-          <p id="shSub"></p>
-        </div>
-        <ol class="steps" id="shSteps"></ol>
+        <p class="sh-cat"><span id="shCat"></span> · <button type="button" data-act="change-cat" aria-label="Изменить: выбрать другую проблему">изменить</button></p>
+        <section class="sticker" aria-labelledby="h-sh">
+          <span class="screw tl" aria-hidden="true"></span><span class="screw tr" aria-hidden="true"></span>
+          <span class="screw bl" aria-hidden="true"></span><span class="screw br" aria-hidden="true"></span>
+          <h1 id="h-sh" tabindex="-1"></h1>
+          <p class="sub" id="shSub"></p>
+          <ol class="ysteps" id="shSteps"></ol>
+        </section>
         <div class="acts">
-          <button class="btn-y" type="button" data-act="sh-ok">Заработало</button>
-          <button class="btn-o" type="button" data-act="sh-fail">Не помогло — отправить заявку</button>
+          <button class="btn-g" type="button" data-act="sh-ok">Заработало</button>
+          <button class="btn-g" type="button" data-act="sh-fail">Не помогло — отправить заявку</button>
         </div>
       </div>
 
@@ -554,7 +568,7 @@ const CONFIG = {
     pauseTitle: 'Сначала нажмите паузу',
     pauseText:  'Пока заполняете форму, время не списывается. Пауза бесплатная.',
     selfhelpTitle: 'Попробуйте так',
-    selfhelpSub:   'Обычно помогает за 10 секунд.',
+    selfhelpSub:   'Обычно помогает за 10 секунд',
     selfhelpSteps: [
       { title: 'Нажмите паузу',           text: 'Время на паузе не списывается', pause: true },
       { title: 'Нажмите кнопку программы', text: 'Ещё раз, ту же самую' },
@@ -682,17 +696,47 @@ if (WORKER) {
   }, 4 * 60 * 1000);
 }
 
-// ================= 4. НАВИГАЦИЯ =================
-const HEAD_MODE = { 's-choice': 'main', 's-form': 'back', 's-ok': 'back', 's-done': 'brand' };
+// ================= 4. НАВИГАЦИЯ: экраны и история браузера =================
+// Каждый переход — запись в истории, поэтому «← Назад» в шапке, системная «назад» на Android и свайп на iPhone
+// ведут одинаково — на шаг назад. Путь в истории всегда совпадает с картой переходов:
+//   главный → список проблем → самопомощь → «Отлично» | форма;   список → форма;   форма → отправка / ошибка.
+// Принятая заявка делает старые записи формы недействительными: «назад» с «Заявка принята» — на главный.
+const VIEW_SCREEN = { choice: 's-choice', cats: 's-form', selfhelp: 's-form', form: 's-form', ok: 's-ok', send: 's-done' };
+const nav = { view: 'choice', idx: 0, stack: ['choice'], gen: 0, submitted: false };
 function go(id){
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   const top = $('top');
-  top.dataset.mode = HEAD_MODE[id] || 'back';
+  top.dataset.mode = id === 's-choice' ? 'main' : 'back';
   $('postSeg').classList.toggle('lg', top.dataset.mode === 'main');
   scrollTo(0, 0);
-  const h = $(id).querySelector('h1[tabindex]');
+  const h = [...$(id).querySelectorAll('h1[tabindex]')].find(x => !x.hidden && !x.closest('[hidden]'));
   if (h) h.focus({ preventScroll: true });
 }
+function show(view){
+  nav.view = view;
+  if (VIEW_SCREEN[view] === 's-form') layout(view);
+  go(VIEW_SCREEN[view]);
+}
+function navTo(view){                              // вперёд: новая запись в истории
+  nav.idx++;
+  nav.stack.length = nav.idx;
+  nav.stack.push(view);
+  try { history.pushState({ v: view, i: nav.idx, g: nav.gen }, ''); } catch (_) {}
+  show(view);
+}
+function navBackTo(view){                          // назад к уже пройденному экрану
+  const i = nav.stack.lastIndexOf(view, nav.idx - 1);
+  if (i >= 0) history.go(i - nav.idx); else navTo(view);
+}
+function navBack(){ if (nav.idx > 0) history.back(); else show('choice'); }
+window.addEventListener('popstate', e => {
+  const s = e.state;
+  if (!s || typeof s.v !== 'string' || !VIEW_SCREEN[s.v]) return;     // не наша запись
+  nav.idx = s.i;
+  if (s.g < nav.gen && s.v !== 'choice') { history.go(-s.i); return; }   // заявка уже принята — на главный
+  show(s.v);
+});
+try { history.replaceState({ v: 'choice', i: 0, g: 0 }, ''); } catch (_) {}   // открытие по QR — одна запись
 $('postSeg').classList.add('lg');
 
 // ================= 5. ФОРМА: адаптивный сценарий =================
@@ -750,11 +794,12 @@ function coinName(v){
   const T = CONFIG.texts;
   $('pauseTitle').textContent = T.pauseTitle;
   $('pauseText').textContent = T.pauseText;
-  $('shTitle').textContent = T.selfhelpTitle;
+  $('h-sh').textContent = T.selfhelpTitle;
   $('shSub').textContent = T.selfhelpSub;
+  $('shCat').textContent = CAT.start.title;
   $('shSteps').innerHTML = T.selfhelpSteps.map((s, i) =>
-    `<li><span class="num" aria-hidden="true">${i + 1}</span><span class="tx"><b>${esc(s.title)}</b><span class="d">${esc(s.text)}</span></span>` +
-    (s.pause ? '<span class="pbtn sm" aria-hidden="true"></span>' : '') + '</li>').join('');
+    `<li><span class="n" aria-hidden="true">${i + 1}</span><span class="tx"><b>${esc(s.title)}</b><span class="d">${esc(s.text)}</span></span>` +
+    (s.pause ? '<span class="pbtn" aria-hidden="true"></span>' : '') + '</li>').join('');
 }
 
 const chosen = name => form.elements[name] ? (form.elements[name].value || '') : '';
@@ -804,23 +849,25 @@ function paintCounter(rowEl){
   rowEl.querySelector('.plus').disabled = n >= CONFIG.maxCount;
 }
 
-// что показать для выбранной категории
-function layout(){
+// что показать на экране формы: список проблем, самопомощь или поля выбранной категории
+function layout(view){
   const c = state.cat;
-  const sel = !!c;
-  const selfhelp = c === 'start' && !state.selfhelpTried;
-  $('catList').hidden = sel;
-  $('catSel').hidden = !sel;
-  $('pauseBox').hidden = !sel || c === 'money' || selfhelp;
+  const cats = view === 'cats' || !c;
+  const selfhelp = !cats && view === 'selfhelp';
+  $('h-form').hidden = selfhelp;
+  $('formLead').hidden = selfhelp;
+  $('catList').hidden = !cats;
+  $('catSel').hidden = cats || selfhelp;
+  $('pauseBox').hidden = cats || selfhelp || c === 'money';
   $('selfHelp').hidden = !selfhelp;
-  $('rest').hidden = !sel || selfhelp;
-  if (!sel) return;
+  $('rest').hidden = cats || selfhelp;
+  form.querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === c)));
+  if (selfhelp && !state.shownSelfhelp) { state.shownSelfhelp = true; track('selfhelp_shown'); }
+  if (cats || selfhelp) return;
 
   const cat = CAT[c];
   $('catName').textContent = cat.title;
   $('plaqueIco').setAttribute('href', '#' + cat.icon);
-  $('catBody').hidden = selfhelp;
-  $('plaque').classList.toggle('solo', selfhelp);
 
   $('blkMoney').hidden = c !== 'money';
   const prog = c === 'start' || c === 'broken' || c === 'weak';
@@ -840,8 +887,6 @@ function layout(){
   $('attachTitle').innerHTML = title;
   $('attachTitle').hidden = !title;
   paintPair();
-
-  if (selfhelp && !state.shownSelfhelp) { state.shownSelfhelp = true; track('selfhelp_shown'); }
 }
 function paintPair(){
   const inPair = $('voiceHome').contains($('voiceBox'));
@@ -854,18 +899,8 @@ function paintPair(){
 function selectCat(id){
   if (state.cat !== id) state.shownSelfhelp = false;
   state.cat = id;
-  form.querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === id)));
   showErr('e-cat', false);
-  layout();
-  $('catName').focus({ preventScroll: true });
-  $('catSel').scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
-}
-function changeCat(){
-  $('catList').hidden = false;
-  ['catSel', 'pauseBox', 'selfHelp', 'rest'].forEach(id => { $(id).hidden = true; });
-  const cur = form.querySelector(`.cat[data-cat="${state.cat}"]`) || form.querySelector('.cat');
-  cur.focus({ preventScroll: true });
-  $('h-form').scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  navTo(id === 'start' && !state.selfhelpTried ? 'selfhelp' : 'form');
 }
 
 // одно делегирование на всю форму
@@ -1694,7 +1729,7 @@ function buildJob(recording){
   const c = state.cat;
   const m = c === 'money' ? moneyData() : { method: '', money: null, total: 0 };
   const payload = {
-    action: 'create', clientId: uid(), retry: false, post, category: CAT[c].title,
+    action: 'create', clientId: failedCid || uid(), retry: !!failedCid, post, category: CAT[c].title,
     programs: c === 'start' || c === 'broken' || c === 'weak' ? programs() : [],
     payMethod: m.method, money: m.money, total: m.total,
     selfhelpTried: c === 'start' && state.selfhelpTried,
@@ -1725,7 +1760,7 @@ function setDone(stage, job, id){
     seg($('numSeg'), '----', '8888');
     $('numSeg').setAttribute('aria-label', 'ещё нет');
     ['doneNote', 'upl', 'attn', 'promoBox'].forEach(k => { $(k).hidden = true; });
-    if (stage === 'sending') go('s-done');
+    if (stage === 'sending' && nav.view !== 'send') navTo('send');
   } else if (stage === 'ok') {
     const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp' }[job.payload.contact] || 'свяжемся';
     ico.hidden = false; ico.className = 'okc';
@@ -1752,6 +1787,7 @@ function setDone(stage, job, id){
   }
 }
 let retryJob = null;
+let failedCid = '';          // заявка не подтвердилась — повторная отправка из формы пойдёт с тем же clientId
 
 function showNote(id, why){
   const text = {
@@ -1804,6 +1840,7 @@ async function runJob(job, tClick = performance.now()){
 
   if (!r || !r.id) {
     running = false; guard = false;
+    failedCid = job.payload.clientId;
     track('submit_fail');
     setDone('fail', job);
     dbg('заявка: ошибка отправки');
@@ -1812,6 +1849,12 @@ async function runJob(job, tClick = performance.now()){
   dbg(`заявка: номер #${r.id} получен через ${(performance.now() - tClick).toFixed(0)} мс`);
   clearPending();
   track('submit_ok');
+  failedCid = '';
+  // заявка принята: записи формы в истории больше не действуют, «назад» — на главный
+  nav.submitted = true;
+  nav.gen++;
+  if (nav.view !== 'send') navTo('send');
+  try { history.replaceState({ v: 'send', i: nav.idx, g: nav.gen }, ''); } catch (_) {}
   ticket = Object.assign({ cid: job.payload.clientId, tClick }, r);
   setDone('ok', job, r.id);
   requestAnimationFrame(() => dbg(`заявка: интерфейс обновлён через ${(performance.now() - tClick).toFixed(0)} мс`));
@@ -2004,11 +2047,17 @@ async function askSent(auth){
 
 // ================= 17. ДЕЙСТВИЯ: одно делегирование кликов =================
 const actions = {
-  'help': () => { go('s-form'); track('open_help'); ensureDraft(); },
-  'back': () => go('s-choice'),
-  'home': () => go('s-choice'),
+  'help': () => {
+    if (nav.submitted) {
+      if (running) { navTo('send'); return; }            // вложения прошлой заявки ещё грузятся — показать прогресс
+      resetForm();
+    }
+    navTo('cats'); track('open_help'); ensureDraft();
+  },
+  'back': navBack,
+  'home': () => navBackTo('choice'),
   'cat': el => selectCat(el.dataset.cat),
-  'change-cat': changeCat,
+  'change-cat': () => navBackTo('cats'),
   'cnt': el => {
     const row = el.closest('.cnt'), kind = row.dataset.kind, v = +row.dataset.v;
     cnt[kind][v] = Math.max(0, Math.min(CONFIG.maxCount, cnt[kind][v] + Number(el.dataset.d)));
@@ -2023,14 +2072,8 @@ const actions = {
     if (on) $('otherNote').focus();
     paintMoney();
   },
-  'sh-ok': () => { track('selfhelp_ok'); go('s-ok'); },
-  'sh-fail': () => {
-    track('selfhelp_fail');
-    state.selfhelpTried = true;
-    layout();
-    $('catName').focus({ preventScroll: true });
-    $('pauseBox').scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
-  },
+  'sh-ok': () => { track('selfhelp_ok'); navTo('ok'); },
+  'sh-fail': () => { track('selfhelp_fail'); state.selfhelpTried = true; navTo('form'); },
   'stuck': el => {
     if ($('stuck').dataset.sent) return;               // одно нажатие
     $('stuck').dataset.sent = '1';
@@ -2068,6 +2111,27 @@ document.addEventListener('click', e => {
   else if (h.startsWith('viber:')) track('click_viber');
   else if (h.includes('wa.me/')) track('click_whatsapp');
 });
+
+// новая заявка после принятой: форма с чистого листа (телефон и способ связи остаются)
+function resetForm(){
+  nav.submitted = false;
+  Object.assign(state, { cat: '', selfhelpTried: false, shownSelfhelp: false });
+  form.querySelectorAll('input[name="prog"], input[name="pay"]').forEach(i => { i.checked = false; });
+  Object.values(cnt).forEach(k => Object.keys(k).forEach(v => { k[v] = 0; }));
+  form.querySelectorAll('.cnt').forEach(paintCounter);
+  $('otherNoteBtn').setAttribute('aria-pressed', 'false'); $('otherNoteBox').hidden = true;
+  $('otherNote').value = ''; $('cardSum').value = ''; $('comment').value = '';
+  paintMoney();
+  att.items.forEach(it => { if (it.url) URL.revokeObjectURL(it.url); });
+  Object.assign(att, { draft: null, draftP: null, items: new Map(), next: { img: 1, vid: 100, voice: 200 }, order: 0 });
+  $('files').innerHTML = '';
+  if (voice) URL.revokeObjectURL(voice.url);
+  voice = null; $('vaudio').removeAttribute('src'); $('vprev').hidden = true; $('micBtn').hidden = !canRecord;
+  ticket = null; claimed = false; uplBase = null; promoSent = null; retryJob = null;
+  $('promo').checked = false; $('promoMsg').textContent = ''; $('upl').classList.remove('fin'); $('doneNote').hidden = true;
+  ['e-cat', 'e-money', 'e-prog', 'e-other', 'e-phone'].forEach(id => showErr(id, false));
+  paintPair(); updateHint('');
+}
 
 // ================= 18. ВЕРНУЛИСЬ С НЕПОДТВЕРЖДЁННОЙ ЗАЯВКОЙ =================
 {
