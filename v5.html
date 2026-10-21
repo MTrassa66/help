@@ -98,17 +98,8 @@
   .btn-d.fill{background:var(--on-yellow);color:var(--yellow)}
   .btn-y[disabled]{opacity:.65;cursor:default}
 
-  /* ---------- экран выбора ---------- */
-  .review h2{font-size:18px;font-weight:800;color:var(--yellow)}
-  .review p{margin:0;font-size:14px}
-  .review .row2{margin-top:2px}
-  .helpbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:6px;
-    min-height:120px;padding:18px 46px 18px 18px;background:var(--yellow);color:var(--on-yellow);border-radius:8px 0 0 8px;
-    clip-path:polygon(0 0,calc(100% - 30px) 0,100% 50%,calc(100% - 30px) 100%,0 100%)}
-  .helpbtn .ttl{font:900 24px/1.05 var(--font);text-transform:uppercase}
-  .helpbtn .sub{font:700 14px/1.35 var(--font)}
-  .helpbtn:focus-visible{outline:none;box-shadow:inset 0 0 0 4px var(--on-yellow)}
-  .direct{margin-top:auto;text-align:center}
+  /* «Удобнее напрямую?» — внизу списка проблем */
+  .direct{text-align:center;margin-top:auto;padding-top:8px}
   .direct p{margin:0 0 2px;color:var(--muted);font-size:14px}
   .direct nav{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 20px}
   .direct a{color:var(--yellow);font:800 15px var(--font);text-decoration:none;padding:12px 4px;text-transform:uppercase}
@@ -121,13 +112,18 @@
   .warnbox :focus-visible{outline-color:var(--on-yellow)}
 
   /* ---------- форма: категории ---------- */
-  .cats{display:flex;flex-direction:column;gap:8px}
-  .cat{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;
-    background:var(--card);border:2px solid var(--line);border-radius:8px;font:900 15px/1.2 var(--font);text-transform:uppercase;color:var(--text)}
-  .cat svg{flex:none;width:26px;height:26px;color:var(--yellow)}
-  .cat[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--on-yellow)}
-  .cat[aria-pressed="true"] svg{color:var(--on-yellow)}
-  .cat:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  /* категории — клавиши терминала: жёлтые, «объём» снизу, чёрный круг со стрелкой — сигнал «нажми» */
+  .cats{display:flex;flex-direction:column;gap:12px}
+  .key{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;min-height:76px;
+    padding:12px 12px 12px 16px;background:var(--yellow);color:var(--on-yellow);border-radius:8px;box-shadow:0 4px 0 #A99E10;
+    font:900 18px/1.2 var(--font);text-transform:uppercase;transition:transform 80ms,box-shadow 80ms;-webkit-user-select:none;user-select:none}
+  .key svg{flex:none;width:26px;height:26px;color:var(--on-yellow)}
+  .key .kt{flex:1}
+  .key .go{flex:none;width:40px;height:40px;border-radius:50%;background:var(--on-yellow);color:var(--yellow);
+    display:flex;align-items:center;justify-content:center;font:900 20px/1 var(--font)}
+  .key:active{transform:translateY(3px);box-shadow:none}
+  .key:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+  .key.sm{min-height:64px;font-size:16px}
   .plaque{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 6px 6px 14px;background:var(--yellow);color:var(--on-yellow);
     border-radius:6px 6px 0 0;font:900 15px/1.2 var(--font);text-transform:uppercase}
   .plaque svg{flex:none;width:24px;height:24px}
@@ -284,6 +280,8 @@
   .ok-msg{margin:0;color:var(--ok-ink);font-size:14px}
 
   @media (prefers-reduced-motion: reduce){
+    .key{transition:none}
+    .key:active{transform:none;box-shadow:0 4px 0 #A99E10;background:#D9CC10}
     .progress i{transition:none}
     .rec .dot{animation:none}
     .okc.wait{animation-duration:2.4s}
@@ -321,8 +319,10 @@
   <div class="stripe" aria-hidden="true"></div>
 
   <main>
-  <!-- ЭКРАН 1: ВЫБОР -->
-  <section class="screen on" id="s-choice" aria-labelledby="h-choice">
+  <!-- ЭКРАН «ЧТО СЛУЧИЛОСЬ?» — корневой (QR открывает сразу его) и форма -->
+  <section class="screen on" id="s-form" aria-labelledby="h-form">
+    <h1 id="h-form" tabindex="-1">Что случилось?</h1>
+    <p class="lead" id="formLead"></p>
     <div class="warnbox" id="pendBox" role="region" aria-labelledby="pendTitle" hidden>
       <h2 id="pendTitle">Возможно, ваша заявка не отправилась</h2>
       <p id="pendText"></p>
@@ -331,32 +331,6 @@
         <button class="btn-d" type="button" data-act="pend-drop">Удалить</button>
       </div>
     </div>
-    <h1 id="h-choice" tabindex="-1">Как прошла<br>мойка?</h1>
-
-    <section class="card review" aria-labelledby="h-review">
-      <h2 id="h-review">Оставить отзыв</h2>
-      <p class="muted">Займёт минуту — и поможет другим водителям выбрать мойку</p>
-      <div class="row2">
-        <a class="btn-o" id="lnkYandex" target="_blank" rel="noopener">Яндекс →</a>
-        <a class="btn-o" id="lnkGoogle" target="_blank" rel="noopener">Google →</a>
-      </div>
-    </section>
-
-    <button class="helpbtn" type="button" data-act="help">
-      <span class="ttl">Нужна помощь</span>
-      <span class="sub" id="helpSub"></span>
-    </button>
-
-    <div class="direct">
-      <p>Удобнее напрямую?</p>
-      <nav id="altContacts" aria-label="Связаться напрямую"></nav>
-    </div>
-  </section>
-
-  <!-- ЭКРАН 2: ФОРМА -->
-  <section class="screen" id="s-form" aria-labelledby="h-form">
-    <h1 id="h-form" tabindex="-1">Что случилось?</h1>
-    <p class="lead" id="formLead"></p>
 
     <form id="form" novalidate>
       <div class="cats" id="catList" role="group" aria-labelledby="h-form"></div>
@@ -478,6 +452,11 @@
         <p class="privacy">Телефон нужен только для связи по этой заявке.</p>
       </div>
     </form>
+
+    <div class="direct" id="direct">
+      <p>Удобнее напрямую?</p>
+      <nav id="altContacts" aria-label="Связаться напрямую"></nav>
+    </div>
   </section>
 
   <!-- ЭКРАН 3: «ЗАРАБОТАЛО» -->
@@ -489,7 +468,7 @@
       <div class="stuck" id="stuck" role="group" aria-labelledby="stuckTitle"></div>
       <p class="ok-msg" id="stuckMsg" role="status"></p>
     </section>
-    <div class="acts"><button class="btn-o" type="button" data-act="home">На главную</button></div>
+    <div class="acts"><button class="btn-o" type="button" data-act="home">К списку проблем</button></div>
   </section>
 
   <!-- ЭКРАН 4: ЗАЯВКА -->
@@ -534,8 +513,9 @@
 const CONFIG = {
   workerUrl: 'https://mtrassa.dowtnohot.workers.dev',     // быстрый сервер Cloudflare (пусто — только через Google)
   scriptUrl: 'https://script.google.com/macros/s/AKfycbwsicWQuIhtdmMZP-xylBFHSVZ2mZ3f3ap7YH5zfhYhJoTqKYxwgF1GqTSuWX6wcM27/exec',
-  yandexUrl: 'https://yandex.by/maps/-/CXFTm08y',
-  googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
+  // отзывы на картах убраны с формы (v5.1) — ссылки на будущее:
+  // yandexUrl: 'https://yandex.by/maps/-/CXFTm08y',
+  // googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
   phone:     '+375296400339',     // рабочий номер для звонков
   viber:     '+375296400339',     // номер с Viber
   whatsapp:  '+375296400339',     // номер с WhatsApp
@@ -646,11 +626,8 @@ function inHours(){
   return h >= CONFIG.hours.from && h < CONFIG.hours.to;
 }
 const replyShort = () => inHours() ? `в течение ${CONFIG.responseMinutes} минут` : `утром, после ${CONFIG.hours.from}:00`;
-$('helpSub').textContent = 'Не зачислились деньги, не включилась программа, что-то сломалось — ответим ' + replyShort();
-$('formLead').textContent = `Проверим записи с камер и свяжемся с вами ${replyShort()}.`;
-
-$('lnkYandex').href = CONFIG.yandexUrl;
-$('lnkGoogle').href = CONFIG.googleUrl;
+const LEAD_CATS = 'Нажмите на проблему — ответим ' + replyShort();
+const LEAD_FORM = `Проверим записи с камер и свяжемся с вами ${replyShort()}.`;
 const viberHref = `viber://chat?number=${encodeURIComponent(CONFIG.viber)}`;
 const waHref = text => `https://wa.me/${digitsOf(CONFIG.whatsapp)}` + (text ? `?text=${encodeURIComponent(text)}` : '');
 {
@@ -721,15 +698,15 @@ if (WORKER) {
 // ================= 4. НАВИГАЦИЯ: экраны и история браузера =================
 // Каждый переход — запись в истории, поэтому «← Назад» в шапке, системная «назад» на Android и свайп на iPhone
 // ведут одинаково — на шаг назад. Путь в истории всегда совпадает с картой переходов:
-//   главный → список проблем → «Что именно?» → самопомощь → «Отлично» | форма;
-//   «Что именно?» → форма;   список → форма (деньги, другое);   форма → отправка / ошибка.
-// Принятая заявка делает старые записи формы недействительными: «назад» с «Заявка принята» — на главный.
-const VIEW_SCREEN = { choice: 's-choice', cats: 's-form', sub: 's-form', selfhelp: 's-form', form: 's-form', ok: 's-ok', send: 's-done' };
-const nav = { view: 'choice', idx: 0, stack: ['choice'], gen: 0, submitted: false };
-function go(id){
+//   «Что случилось?» (корень) → «Что именно?» → самопомощь → «Отлично» | форма;
+//   «Что именно?» → форма;   «Что случилось?» → форма (деньги, другое);   форма → отправка / ошибка.
+// Принятая заявка делает старые записи формы недействительными: «назад» с «Заявка принята» — к списку проблем.
+const VIEW_SCREEN = { cats: 's-form', sub: 's-form', selfhelp: 's-form', form: 's-form', ok: 's-ok', send: 's-done' };
+const nav = { view: 'cats', idx: 0, stack: ['cats'], gen: 0, submitted: false };
+function go(id, root){
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   const top = $('top');
-  top.dataset.mode = id === 's-choice' ? 'main' : 'back';
+  top.dataset.mode = root ? 'main' : 'back';
   $('postSeg').classList.toggle('lg', top.dataset.mode === 'main');
   scrollTo(0, 0);
   const h = [...$(id).querySelectorAll('h1[tabindex]')].find(x => !x.hidden && !x.closest('[hidden]'));
@@ -738,7 +715,7 @@ function go(id){
 function show(view){
   nav.view = view;
   if (VIEW_SCREEN[view] === 's-form') layout(view);
-  go(VIEW_SCREEN[view]);
+  go(VIEW_SCREEN[view], view === 'cats');
 }
 function navTo(view){                              // вперёд: новая запись в истории
   nav.idx++;
@@ -751,15 +728,15 @@ function navBackTo(view){                          // назад к уже пр�
   const i = nav.stack.lastIndexOf(view, nav.idx - 1);
   if (i >= 0) history.go(i - nav.idx); else navTo(view);
 }
-function navBack(){ if (nav.idx > 0) history.back(); else show('choice'); }
+function navBack(){ if (nav.idx > 0) history.back(); else show('cats'); }
 window.addEventListener('popstate', e => {
   const s = e.state;
   if (!s || typeof s.v !== 'string' || !VIEW_SCREEN[s.v]) return;     // не наша запись
   nav.idx = s.i;
-  if (s.g < nav.gen && s.v !== 'choice') { history.go(-s.i); return; }   // заявка уже принята — на главный
+  if (s.g < nav.gen && s.v !== 'cats') { history.go(-s.i); return; }   // заявка уже принята — к списку проблем
   show(s.v);
 });
-try { history.replaceState({ v: 'choice', i: 0, g: 0 }, ''); } catch (_) {}   // открытие по QR — одна запись
+try { history.replaceState({ v: 'cats', i: 0, g: 0 }, ''); } catch (_) {}   // открытие по QR — одна запись
 $('postSeg').classList.add('lg');
 
 // ================= 5. ФОРМА: адаптивный сценарий =================
@@ -779,8 +756,9 @@ function coinName(v){
 {
   // категории и «Что именно?» — крупные кнопки-плашки
   const plate = (c, act) =>
-    `<button type="button" class="cat" data-act="${act}" data-cat="${esc(c.id)}" aria-pressed="false">` +
-    `<svg aria-hidden="true"><use href="#${esc(c.icon)}"/></svg><span>${esc(CAT[c.id].title)}</span></button>`;
+    `<button type="button" class="key${act === 'sub' ? ' sm' : ''}" data-act="${act}" data-cat="${esc(c.id)}">` +
+    `<svg aria-hidden="true"><use href="#${esc(c.icon)}"/></svg><span class="kt">${esc(CAT[c.id].title)}</span>` +
+    `<span class="go" aria-hidden="true">→</span></button>`;
   $('catList').innerHTML = CONFIG.categories.map(c => plate(c, 'cat')).join('');
   $('subList').innerHTML = SUBS.map(c => plate(c, 'sub')).join('');
 
@@ -870,7 +848,6 @@ function paintCounter(rowEl){
 }
 
 // что показать на экране формы: список проблем, «Что именно?», самопомощь или поля выбранной проблемы
-const LEAD = $('formLead').textContent;
 function layout(view){
   const c = state.cat;
   const sub = view === 'sub';
@@ -878,7 +855,10 @@ function layout(view){
   const selfhelp = !cats && !sub && view === 'selfhelp';
   const fields = !cats && !sub && !selfhelp;
   $('h-form').textContent = sub ? CONFIG.texts.subTitle : 'Что случилось?';
-  $('formLead').textContent = sub ? CAT.program.title : LEAD;
+  $('formLead').textContent = sub ? CAT.program.title : cats ? LEAD_CATS : LEAD_FORM;
+  $('pendBox').hidden = !(cats && pendingOffer);
+  $('direct').hidden = !cats;
+  if (cats && nav.submitted && !running) resetForm();   // вернулись после принятой заявки — список с чистого листа
   $('h-form').hidden = selfhelp;
   $('formLead').hidden = selfhelp;
   $('catList').hidden = !cats;
@@ -887,9 +867,6 @@ function layout(view){
   $('pauseBox').hidden = !fields || c === 'money';
   $('selfHelp').hidden = !selfhelp;
   $('rest').hidden = !fields;
-  const top = c && CAT[c] ? (CAT[c].parent || c) : '';
-  $('catList').querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === top)));
-  $('subList').querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === c)));
   if (selfhelp && !state.shownSelfhelp) { state.shownSelfhelp = true; track('selfhelp_shown'); }
   if (!fields) return;
 
@@ -930,6 +907,11 @@ function paintPair(){
 }
 
 function selectCat(id){
+  if (nav.submitted) {
+    if (running) { navTo('send'); return; }          // вложения прошлой заявки ещё грузятся — показать прогресс
+    resetForm();
+  }
+  ensureDraft();                                     // черновой ключ для предзагрузки — когда клиент выбрал проблему
   showErr('e-cat', false);
   if (CAT[id].sub) { navTo('sub'); return; }        // «Проблема с программой» → «Что именно?»
   state.cat = id;
@@ -2090,15 +2072,8 @@ async function askSent(auth){
 
 // ================= 17. ДЕЙСТВИЯ: одно делегирование кликов =================
 const actions = {
-  'help': () => {
-    if (nav.submitted) {
-      if (running) { navTo('send'); return; }            // вложения прошлой заявки ещё грузятся — показать прогресс
-      resetForm();
-    }
-    navTo('cats'); track('open_help'); ensureDraft();
-  },
   'back': navBack,
-  'home': () => navBackTo('choice'),
+  'home': () => navBackTo('cats'),
   'cat': el => selectCat(el.dataset.cat),
   'sub': el => selectSub(el.dataset.cat),
   'change-cat': () => navBackTo('cats'),
@@ -2135,13 +2110,13 @@ const actions = {
   'retry': () => { if (retryJob) { retryJob.payload.retry = true; runJob(retryJob); } },
   'pend-send': () => {
     const p = loadPending();
-    $('pendBox').hidden = true;
+    pendingOffer = false; $('pendBox').hidden = true;
     if (!p) return;
     const payload = Object.assign({}, p.payload, { retry: true });
     if (p.hadFiles) Object.assign(payload, { photos: 0, videos: 0, voice: false, skipped: 0 });
     runJob({ payload, voiceP: Promise.resolve(null), hadFiles: p.hadFiles, lostFiles: p.hadFiles });
   },
-  'pend-drop': () => { clearPending(); $('pendBox').hidden = true; }
+  'pend-drop': () => { clearPending(); pendingOffer = false; $('pendBox').hidden = true; }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
@@ -2150,9 +2125,7 @@ document.addEventListener('click', e => {
   const a = e.target.closest('a');
   if (!a) return;
   const h = a.getAttribute('href') || '';
-  if (a.id === 'lnkYandex') track('click_yandex');
-  else if (a.id === 'lnkGoogle') track('click_google');
-  else if (h.startsWith('tel:')) track('click_call');
+  if (h.startsWith('tel:')) track('click_call');
   else if (h.startsWith('viber:')) track('click_viber');
   else if (h.includes('wa.me/')) track('click_whatsapp');
 });
@@ -2179,15 +2152,18 @@ function resetForm(){
 }
 
 // ================= 18. ВЕРНУЛИСЬ С НЕПОДТВЕРЖДЁННОЙ ЗАЯВКОЙ =================
+var pendingOffer = false;    // плашка «Возможно, ваша заявка не отправилась» — над списком проблем
 {
   const p = loadPending();
   if (p) {
+    pendingOffer = true;
     // запрос с keepalive мог дойти — повтор безопасен: сервер узнает заявку по clientId
     $('pendText').textContent = `Заявка от ${fmt(new Date(p.ts))}. Отправить её ещё раз? Если она уже дошла, второй не будет.` +
       (p.hadFiles ? ' Фото, видео и голосовое не сохранились — их можно будет прислать в Viber или WhatsApp.' : '');
     $('pendBox').hidden = false;
   }
 }
+layout('cats');                                       // QR открывает сразу список проблем
 dbg('страница готова');
 </script>
 </body>
