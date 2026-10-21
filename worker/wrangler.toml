@@ -8,7 +8,7 @@ keep_vars = true
 
 # хранилище moika-dedupe: ID — Cloudflare → Storage & Databases → KV → moika-dedupe
 kv_namespaces = [
-  { binding = "DEDUPE", id = "ВСТАВЬТЕ_ID_KV" }
+  { binding = "DEDUPE", id = "203b90dee41147fe8e6bce44d6492a23" }
 ]
 
 # счётчик номеров и очередь «Telegram + таблица»
