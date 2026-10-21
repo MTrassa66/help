@@ -38,12 +38,14 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   [hidden]{display:none !important}
+  /* без «резинки» у краёв: Android растягивает страницу, iPhone её оттягивает */
+  html,body{overscroll-behavior:none}
   html{background:var(--metal-lo)}
-  body{margin:0;min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
+  body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
     color:var(--text);font:600 15px/1.45 var(--sys)}
   .wrap{max-width:480px;margin:0 auto;padding:12px}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:visible;
-    min-height:calc(100vh - 24px);min-height:calc(100dvh - 24px);display:flex;flex-direction:column}
+    min-height:calc(100vh - 24px);min-height:calc(100svh - 24px);display:flex;flex-direction:column}
   @supports (overflow:clip){.panel{overflow:clip}}   /* clip, а не hidden: иначе кнопка отправки не «прилипает» к экрану */
   .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
   :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
@@ -315,7 +317,7 @@
   /* невысокие экраны: список проблем и самопомощь — целиком на первом экране */
   @media (max-height: 700px){
     .wrap{padding:8px}
-    .panel{min-height:calc(100vh - 16px);min-height:calc(100dvh - 16px)}
+    .panel{min-height:calc(100vh - 16px);min-height:calc(100svh - 16px)}
     .top{min-height:60px;padding:8px 14px}
     .top[data-mode="main"]{padding:10px 14px 8px}
     .seg.lg{font-size:30px;padding:6px 10px}.seg.lg .on{right:10px;top:6px}
