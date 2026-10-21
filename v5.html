@@ -1,0 +1,2194 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#232528">
+<meta name="robots" content="noindex">
+<title>Мойка · Минская 10А</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Мойка самообслуживания, Витебск, ул. Минская 10А: отзыв или помощь с проблемой.">
+<!-- соединения открываем заранее: заявка уйдёт без лишних рукопожатий -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- шрифт табло (DSEG7) — сразу; Montserrat — без блокировки отрисовки -->
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&amp;display=swap&amp;subset=cyrillic" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&amp;display=swap&amp;subset=cyrillic"></noscript>
+<style>
+  @font-face{font-family:"DSEG7";font-weight:700;font-display:block;
+    src:url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2")}
+  :root{
+    /* корпус и панель терминала */
+    --metal-hi:#A9AEB3; --metal-lo:#868B90;
+    --panel:#232528; --line:#3A3D41; --card:#1A1C1E; --field:#111214; --field-line:#6A6F75; --dash:#6A6F75;   /* рамка полей светлее #4A4E54 из ТЗ: контраст 3,4:1 вместо 2:1 */
+    /* акценты */
+    --yellow:#F0E21C; --on-yellow:#111214;
+    --text:#F2F2F0; --muted:#A8ADB3; --soft:#C3C7CC; --ph:#8A9097;
+    --red:#FF2E2E; --err:#FF5252; --seg-bg:#0B0B0C; --seg-off:#3B1414;
+    --ok:#3FBF5F; --ok-ink:#5BD67A; --ok-bg:#1F3A26;
+    --font:Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    --sys:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    --fast:.18s;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
+  html{background:var(--metal-lo)}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
+    color:var(--text);font:600 15px/1.45 var(--sys)}
+  .wrap{max-width:480px;margin:0 auto;padding:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    min-height:calc(100vh - 24px);display:flex;flex-direction:column}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+  :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  h1:focus,h2:focus{outline:none}
+  .up{text-transform:uppercase}
+  button{font:inherit;color:inherit}
+
+  /* ---------- шапка ---------- */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;min-height:76px}
+  .top .brand{font:800 13px/1.2 var(--font);letter-spacing:.04em;text-transform:uppercase}
+  .top .brand small{display:block;margin-top:4px;font:600 12px var(--sys);letter-spacing:0;text-transform:none;color:var(--muted)}
+  .top .back{all:unset;cursor:pointer;color:var(--yellow);font:800 15px var(--font);padding:12px 4px 12px 0;text-transform:uppercase}
+  .top .back:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .postbox{display:flex;align-items:center;gap:8px}
+  .lbl{font:800 11px var(--font);letter-spacing:.12em;color:var(--yellow);text-transform:uppercase}
+  .top[data-mode="main"]{padding:18px 18px 16px}
+  .top[data-mode="main"] .back,.top[data-mode="brand"] .back{display:none}
+  .top[data-mode="back"] .brand{display:none}
+  .top[data-mode="main"] .postbox{flex-direction:column;gap:4px}
+  .stripe{height:8px;flex:none;background:repeating-linear-gradient(-45deg,var(--yellow) 0 10px,var(--on-yellow) 10px 20px)}
+
+  /* ---------- сегментное табло ---------- */
+  .seg{position:relative;display:inline-block;background:var(--seg-bg);border:2px solid var(--line);border-radius:6px;
+    padding:6px 9px;line-height:1;font:700 24px DSEG7,ui-monospace,monospace;white-space:nowrap}
+  .seg .off{color:var(--seg-off)}
+  .seg .on{position:absolute;right:9px;top:6px;color:var(--red);text-shadow:0 0 10px rgba(255,46,46,.65)}
+  .seg.lg{font-size:40px;padding:8px 12px}.seg.lg .on{right:12px;top:8px}
+  .seg.md{font-size:30px;padding:8px 12px}.seg.md .on{right:12px;top:8px}
+  .seg.xl{font-size:52px;padding:14px 18px;border-radius:8px}.seg.xl .on{right:18px;top:14px}
+
+  /* ---------- экраны ---------- */
+  main{flex:1;display:flex;flex-direction:column}
+  .screen{display:none;flex:1;flex-direction:column;gap:16px;padding:22px 14px 24px}
+  .screen.on{display:flex}
+  h1{margin:0;font:900 28px/1.1 var(--font);letter-spacing:.01em;text-transform:uppercase;padding:0 4px}
+  h2{margin:0;font:900 22px/1.15 var(--font);text-transform:uppercase}
+  .lead{margin:-8px 0 0;padding:0 4px;color:var(--muted);font-size:14px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;margin:0}
+  fieldset{border:0;margin:0;padding:0;min-width:0}
+  .t{display:block;margin:0;padding:0;font:800 13px/1.3 var(--font);letter-spacing:.03em;text-transform:uppercase;color:var(--text)}
+  .t i{font:600 13px var(--sys);font-style:normal;letter-spacing:0;text-transform:none;color:var(--muted)}
+  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .row3 .chip{font-size:13px;padding:6px 4px}
+  #payChips .chip{min-height:52px;font-size:15px}
+
+  /* кнопки */
+  .btn-y,.btn-o,.btn-d{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;cursor:pointer;
+    border-radius:6px;font:900 18px/1.15 var(--font);text-transform:uppercase;text-decoration:none;width:100%;padding:8px 14px}
+  .btn-y{min-height:60px;background:var(--yellow);color:var(--on-yellow);border:0;letter-spacing:.02em}
+  .btn-o{min-height:52px;background:none;border:2px solid var(--yellow);color:var(--yellow);font-size:15px}
+  .btn-d{min-height:48px;background:none;border:2px solid var(--on-yellow);color:var(--on-yellow);font-size:14px}
+  .btn-d.fill{background:var(--on-yellow);color:var(--yellow)}
+  .btn-y[disabled]{opacity:.65;cursor:default}
+
+  /* ---------- экран выбора ---------- */
+  .review h2{font-size:18px;font-weight:800;color:var(--yellow)}
+  .review p{margin:0;font-size:14px}
+  .review .row2{margin-top:2px}
+  .helpbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:6px;
+    min-height:120px;padding:18px 46px 18px 18px;background:var(--yellow);color:var(--on-yellow);border-radius:8px 0 0 8px;
+    clip-path:polygon(0 0,calc(100% - 30px) 0,100% 50%,calc(100% - 30px) 100%,0 100%)}
+  .helpbtn .ttl{font:900 24px/1.05 var(--font);text-transform:uppercase}
+  .helpbtn .sub{font:700 14px/1.35 var(--font)}
+  .helpbtn:focus-visible{outline:none;box-shadow:inset 0 0 0 4px var(--on-yellow)}
+  .direct{margin-top:auto;text-align:center}
+  .direct p{margin:0 0 2px;color:var(--muted);font-size:14px}
+  .direct nav{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 20px}
+  .direct a{color:var(--yellow);font:800 15px var(--font);text-decoration:none;padding:12px 4px;text-transform:uppercase}
+
+  /* предупреждения — жёлтые плашки */
+  .warnbox{background:var(--yellow);color:var(--on-yellow);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
+  .warnbox h2,.warnbox b{font:900 14px var(--font);letter-spacing:.04em;text-transform:uppercase}
+  .warnbox p{margin:0}
+  .warnbox .row2{margin-top:6px}
+  .warnbox :focus-visible{outline-color:var(--on-yellow)}
+
+  /* ---------- форма: категории ---------- */
+  .cats{display:flex;flex-direction:column;gap:8px}
+  .cat{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;
+    background:var(--card);border:2px solid var(--line);border-radius:8px;font:900 15px/1.2 var(--font);text-transform:uppercase;color:var(--text)}
+  .cat svg{flex:none;width:26px;height:26px;color:var(--yellow)}
+  .cat[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--on-yellow)}
+  .cat[aria-pressed="true"] svg{color:var(--on-yellow)}
+  .cat:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .plaque{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 6px 6px 14px;background:var(--yellow);color:var(--on-yellow);
+    border-radius:6px 6px 0 0;font:900 15px/1.2 var(--font);text-transform:uppercase}
+  .plaque svg{flex:none;width:24px;height:24px}
+  .plaque h2{flex:1;font:inherit}
+  .change{all:unset;cursor:pointer;font:800 12px var(--font);text-decoration:underline;text-underline-offset:3px;padding:14px 10px;text-transform:uppercase}
+  .change:focus-visible{outline:2px solid var(--on-yellow);outline-offset:-2px;border-radius:4px}
+  .catbody{border:2px solid var(--yellow);border-top:0;border-radius:0 0 6px 6px;padding:14px;background:var(--card);display:flex;flex-direction:column;gap:12px}
+  .catbody.plain{border:1px solid var(--line);border-radius:8px;padding:16px}
+  #catSel{display:flex;flex-direction:column}
+  #catSel .sh-cat{margin:-6px 0 14px}
+
+  /* пауза */
+  .pause{display:flex;gap:14px;align-items:center;background:var(--field);border:2px solid var(--yellow);border-radius:8px;padding:14px}
+  .pause .p{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;font:900 9px var(--font);letter-spacing:.1em;color:var(--text);text-transform:uppercase}
+  .pbtn{display:block;width:40px;height:40px;border-radius:50%;border:4px solid #4A1616;
+    background:radial-gradient(circle at 40% 35%,#FF7A7A 0%,#E8262B 45%,#9E1418 100%);box-shadow:0 0 12px rgba(232,38,43,.55)}
+  .pause b{display:block;font:900 15px/1.2 var(--font);color:var(--yellow);text-transform:uppercase}
+  .pause span.d{display:block;margin-top:4px;font-size:13px;color:var(--soft)}
+
+  /* чипсы — нативные radio/checkbox */
+  .chip{display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:6px 8px;
+    border:2px solid var(--field-line);border-radius:6px;font:800 14px/1.15 var(--font);text-transform:uppercase;color:var(--text);cursor:pointer}
+  .vh:checked + .chip,.chip[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--on-yellow)}
+  .vh:focus-visible + .chip,.vh:focus-visible + .prog{outline:2px solid var(--yellow);outline-offset:2px}
+  button.chip{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:48px;padding:6px 14px;
+    border:2px solid var(--field-line);border-radius:6px;font:800 14px var(--font);text-transform:uppercase;cursor:pointer}
+  button.chip:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+
+  /* программы — кружки как на терминале */
+  .progs{display:flex;flex-direction:column;gap:8px}
+  .prog{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
+    font:800 14px/1.2 var(--font);text-transform:uppercase;color:var(--text);cursor:pointer}
+  .num{flex:none;width:32px;height:32px;border:2px solid var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:var(--yellow);font:900 15px var(--font)}
+  .vh:checked + .prog{border-color:var(--yellow);background:#2E2F22}
+  .vh:checked + .prog .num{background:var(--yellow);color:var(--on-yellow)}
+
+  /* деньги: счётчики */
+  .cnt{display:flex;align-items:center;gap:12px;padding:4px 0}
+  .coin{flex:none;width:46px;height:46px;border-radius:50%;border:2px solid var(--yellow);display:flex;align-items:center;justify-content:center;
+    color:var(--yellow);font:900 13px var(--font);white-space:nowrap}
+  .coin.note{border-radius:6px;width:52px;height:34px}
+  .cnt .nm{flex:1;font:800 15px var(--font);color:var(--text)}
+  .cnt .n{width:28px;text-align:center;font:900 22px var(--font);font-variant-numeric:tabular-nums;color:var(--text)}
+  .cnt.zero .coin{border-color:var(--ph);color:var(--muted)}
+  .cnt.zero .nm,.cnt.zero .n{color:var(--muted)}
+  .pm{all:unset;box-sizing:border-box;cursor:pointer;flex:none;width:48px;height:48px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+    font:900 24px var(--font)}
+  .pm.minus{border:2px solid var(--yellow);color:var(--yellow)}
+  .pm.minus[disabled]{border-color:#4A4E54;color:var(--dash);cursor:default}
+  .pm.plus{background:var(--yellow);color:var(--on-yellow)}
+  .pm.plus[disabled]{opacity:.5;cursor:default}
+  .pm:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .total{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:14px}
+  .total .lbl{font-size:14px;letter-spacing:.06em}
+
+  /* поля ввода */
+  input[type=text],input[type=tel],input[type=number],textarea{width:100%;min-height:52px;padding:12px;background:var(--field);
+    border:2px solid var(--field-line);border-radius:6px;color:var(--text);font:600 16px/1.4 var(--sys);outline:none;
+    -webkit-appearance:none;appearance:none;margin:0}
+  input[type=tel],input[type=number]{font:700 18px var(--sys);font-variant-numeric:tabular-nums}
+  input::placeholder,textarea::placeholder{color:var(--ph)}
+  input:focus,textarea:focus{border-color:var(--yellow)}
+  [aria-invalid="true"]{border-color:var(--red) !important}
+  textarea{display:block;min-height:96px;resize:vertical}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .hint{color:var(--muted);font-size:13px}
+  .err{display:flex;gap:6px;align-items:baseline;color:var(--err);font:700 14px var(--sys)}
+  .err::before{content:"!";flex:none;width:18px;height:18px;border-radius:50%;background:var(--red);color:var(--on-yellow);
+    font:900 12px/18px var(--font);text-align:center;transform:translateY(3px)}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .privacy{margin:0;text-align:center;font-size:12px;color:var(--muted)}
+
+  /* вложения */
+  .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .pair.solo,.pair.wide{grid-template-columns:1fr}
+  .addbtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;
+    border:2px dashed var(--dash);border-radius:6px;color:var(--text);font:800 13px var(--font);text-transform:uppercase;text-align:center;padding:6px}
+  .addbtn svg{flex:none;width:20px;height:20px;color:var(--yellow)}
+  .addbtn.big{min-height:64px;font-size:15px}
+  .addbtn:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .rec{display:flex;align-items:center;gap:12px;background:var(--field);border:2px solid var(--red);border-radius:6px;padding:6px 6px 6px 14px}
+  .rec .dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse 1s infinite}
+  .rec .time{flex:1;font:800 15px var(--sys);font-variant-numeric:tabular-nums}
+  .rec button{border:0;background:var(--yellow);color:var(--on-yellow);border-radius:6px;min-height:44px;padding:8px 14px;font:900 14px var(--font);text-transform:uppercase;cursor:pointer}
+  @keyframes pulse{50%{opacity:.25}}
+  .vprev{display:flex;align-items:center;gap:8px;background:var(--field);border:2px solid var(--field-line);border-radius:6px;padding:4px 4px 4px 8px}
+  .vprev audio{flex:1;min-width:0;height:40px}
+  .vprev button{flex:none;border:0;background:none;color:var(--yellow);font:800 13px var(--font);text-transform:uppercase;padding:10px 8px;cursor:pointer}
+  .files{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+  .files:empty{display:none}
+  .thumb{position:relative;width:76px;height:76px;border-radius:6px;overflow:hidden;background:var(--field);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+  .thumb img,.thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .tag{position:absolute;left:4px;bottom:4px;max-width:66px;line-height:1.25;background:rgba(11,11,12,.85);color:var(--text);font-size:11px;border-radius:4px;padding:1px 5px}
+  .thumb .tag.big{background:var(--red);color:var(--on-yellow);font-weight:800}
+  .thumb button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(11,11,12,.85);
+    color:var(--text);font-size:17px;line-height:28px;padding:0;cursor:pointer}
+
+  /* самопомощь — «наклейка терминала»: жёлтый на экране только у плашки шагов */
+  .sh-cat{margin:-6px 0 0;padding:0 4px;font:600 13px/1.5 var(--sys);color:var(--muted)}
+  /* строчная ссылка: зона нажатия 44 px за счёт полей, отрицательные поля не раздувают строку */
+  .sh-cat button{all:unset;cursor:pointer;display:inline-block;padding:14px 8px;margin:-14px -8px;white-space:nowrap;
+    font:800 13px var(--sys);color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+  .sh-cat button:focus-visible{outline:2px solid var(--yellow);outline-offset:-4px;border-radius:4px}
+  .sticker{position:relative;background:var(--yellow);color:var(--on-yellow);border-radius:8px;padding:22px 18px 20px;display:flex;flex-direction:column;gap:16px}
+  .sticker .screw{position:absolute;width:7px;height:7px;border-radius:50%;background:#8A8A6A}
+  .sticker .screw.tl{top:8px;left:8px}.sticker .screw.tr{top:8px;right:8px}
+  .sticker .screw.bl{bottom:8px;left:8px}.sticker .screw.br{bottom:8px;right:8px}
+  .sticker h1{padding:0;font:900 26px/1.1 var(--font);color:var(--on-yellow)}
+  .sticker .sub{margin:-10px 0 0;font:700 13px/1.35 var(--font)}
+  .ysteps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}
+  .ysteps li{display:flex;gap:12px;align-items:center}
+  .ysteps .n{flex:none;width:38px;height:38px;border-radius:50%;background:var(--on-yellow);color:var(--yellow);
+    display:flex;align-items:center;justify-content:center;font:900 18px var(--font)}
+  .ysteps .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+  .ysteps b{font:900 18px/1.15 var(--font);text-transform:uppercase}
+  .ysteps span.d{font:700 13px/1.35 var(--font)}
+  .ysteps .pbtn{flex:none;width:34px;height:34px;border:4px solid var(--on-yellow);box-shadow:none}
+  .btn-g{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;width:100%;
+    min-height:56px;padding:6px 14px;border:2px solid var(--dash);border-radius:6px;color:var(--text);font:900 16px/1.2 var(--font);text-transform:uppercase}
+  .btn-g:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .acts{display:flex;flex-direction:column;gap:10px;margin-top:auto;width:100%}
+  #form{flex:1;display:flex;flex-direction:column;gap:16px}
+  #rest,#selfHelp{gap:16px;flex:1}
+
+  /* «Отлично» и «Заявка принята» */
+  .center{align-items:center;text-align:center}
+  .okc{width:72px;height:72px;border-radius:50%;background:var(--ok-bg);border:3px solid var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto}
+  .okc svg{width:36px;height:36px;color:var(--ok-ink)}
+  .okc.wait{background:none;border:5px solid var(--line);border-top-color:var(--yellow);animation:spin .9s linear infinite}
+  .okc.wait svg{display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .donehead{display:flex;flex-direction:column;gap:14px;text-align:center}
+  .donehead p{margin:0;font-size:15px;color:var(--soft)}
+  .donehead p b{color:var(--text);white-space:nowrap}
+  .donehead a{color:var(--yellow);font-weight:800}
+  .numbox{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .numbox .lbl{font-size:12px;letter-spacing:.14em}
+  .upl{display:flex;flex-direction:column;gap:8px}
+  .progress{height:10px;background:var(--field);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:var(--yellow);transition:width var(--fast)}
+  .upl.fin .progress i{background:var(--ok)}
+  .upl .hint{color:var(--soft)}
+  .stuck{display:flex;justify-content:space-between;gap:6px}
+  .stuck button{all:unset;box-sizing:border-box;cursor:pointer;width:52px;height:52px;border-radius:50%;border:2px solid var(--yellow);
+    display:flex;align-items:center;justify-content:center;color:var(--yellow);font:900 18px var(--font)}
+  .stuck button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  .stuck button[aria-pressed="true"]{background:var(--yellow);color:var(--on-yellow)}
+  .check{display:flex;gap:12px;align-items:flex-start;cursor:pointer;text-align:left}
+  .check input{flex:none;width:24px;height:24px;margin:2px 0 0;accent-color:var(--yellow)}
+  .check b{display:block;font:800 14px/1.3 var(--font);text-transform:uppercase}
+  .check small{display:block;margin-top:4px;color:var(--muted);font-size:13px}
+  .ok-msg{margin:0;color:var(--ok-ink);font-size:14px}
+
+  @media (prefers-reduced-motion: reduce){
+    .progress i{transition:none}
+    .rec .dot{animation:none}
+    .okc.wait{animation-duration:2.4s}
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-money" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="6" width="20" height="12" rx="1.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3v8"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3c3.5 4.5 6 7.8 6 11a6 6 0 0 1-12 0c0-3.2 2.5-6.5 6-11z"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.2"/><path d="M6.5 11.5l1 .8M12 7.5v1.3M17.5 11.5l-1 .8"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<div class="wrap"><div class="panel">
+  <header class="top" id="top" data-mode="main">
+    <button class="back" type="button" data-act="back">← Назад</button>
+    <div class="brand">Мойка<br>самообслуживания<small>Витебск, ул. Минская 10А</small></div>
+    <div class="postbox"><span class="lbl">Пост</span><span class="seg" id="postSeg"></span></div>
+  </header>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <main>
+  <!-- ЭКРАН 1: ВЫБОР -->
+  <section class="screen on" id="s-choice" aria-labelledby="h-choice">
+    <div class="warnbox" id="pendBox" role="region" aria-labelledby="pendTitle" hidden>
+      <h2 id="pendTitle">Возможно, ваша заявка не отправилась</h2>
+      <p id="pendText"></p>
+      <div class="row2">
+        <button class="btn-d fill" type="button" data-act="pend-send">Отправить</button>
+        <button class="btn-d" type="button" data-act="pend-drop">Удалить</button>
+      </div>
+    </div>
+    <h1 id="h-choice" tabindex="-1">Как прошла<br>мойка?</h1>
+
+    <section class="card review" aria-labelledby="h-review">
+      <h2 id="h-review">Оставить отзыв</h2>
+      <p class="muted">Займёт минуту — и поможет другим водителям выбрать мойку</p>
+      <div class="row2">
+        <a class="btn-o" id="lnkYandex" target="_blank" rel="noopener">Яндекс →</a>
+        <a class="btn-o" id="lnkGoogle" target="_blank" rel="noopener">Google →</a>
+      </div>
+    </section>
+
+    <button class="helpbtn" type="button" data-act="help">
+      <span class="ttl">Нужна помощь</span>
+      <span class="sub" id="helpSub"></span>
+    </button>
+
+    <div class="direct">
+      <p>Удобнее напрямую?</p>
+      <nav id="altContacts" aria-label="Связаться напрямую"></nav>
+    </div>
+  </section>
+
+  <!-- ЭКРАН 2: ФОРМА -->
+  <section class="screen" id="s-form" aria-labelledby="h-form">
+    <h1 id="h-form" tabindex="-1">Что случилось?</h1>
+    <p class="lead" id="formLead"></p>
+
+    <form id="form" novalidate>
+      <div class="cats" id="catList" role="group" aria-labelledby="h-form"></div>
+      <div class="cats" id="subList" role="group" aria-labelledby="h-form" hidden></div>
+      <div class="err" id="e-cat" hidden>Выберите, что случилось</div>
+
+      <div class="pause" id="pauseBox" hidden>
+        <span class="p" aria-hidden="true">Пауза<span class="pbtn"></span></span>
+        <span><b id="pauseTitle"></b><span class="d" id="pauseText"></span></span>
+      </div>
+
+      <div id="catSel" hidden>
+        <p class="sh-cat" id="quietLine" hidden><span id="quietText"></span> · <button type="button" data-act="change-sub" aria-label="Изменить: выбрать другую проблему с программой">изменить</button></p>
+        <div class="plaque" id="plaque">
+          <svg aria-hidden="true"><use id="plaqueIco" href="#i-money"/></svg>
+          <h2 id="catName" tabindex="-1"></h2>
+          <button class="change" type="button" data-act="change-cat" aria-label="Изменить категорию">Изменить</button>
+        </div>
+        <div class="catbody" id="catBody">
+          <!-- «Не зачислил деньги» -->
+          <div id="blkMoney" class="field" hidden>
+            <fieldset class="field">
+              <legend class="t">Чем платили?</legend>
+              <div class="row2" id="payChips"></div>
+            </fieldset>
+            <div id="payCoins" class="field" hidden>
+              <span class="t" id="coinsTitle">Сколько монет не зачислилось?</span>
+              <div id="coinRows" role="group" aria-labelledby="coinsTitle"></div>
+            </div>
+            <div id="payNotes" class="field" hidden>
+              <span class="t" id="notesTitle">Сколько купюр не зачислилось?</span>
+              <div id="noteRows" role="group" aria-labelledby="notesTitle"></div>
+              <div><button class="chip" type="button" id="otherNoteBtn" data-act="other-note" aria-pressed="false" aria-controls="otherNoteBox">Другая</button></div>
+              <div class="field" id="otherNoteBox" hidden>
+                <label class="t" for="otherNote">Сумма другой купюры, р.</label>
+                <input type="number" id="otherNote" inputmode="decimal" min="0" max="500" step="0.5" placeholder="Например, 20">
+              </div>
+            </div>
+            <div class="total" id="totalBox" hidden>
+              <span class="lbl" id="totalLbl">Итого</span>
+              <span class="seg md" id="totalSeg" role="status" aria-labelledby="totalLbl totalSeg"></span>
+            </div>
+            <div class="err" id="e-money" hidden></div>
+          </div>
+
+          <!-- программы -->
+          <fieldset id="blkProg" class="field" hidden>
+            <legend class="t" id="progTitle"></legend>
+            <div class="progs" id="progs"></div>
+            <div class="err" id="e-prog" hidden>Отметьте программу</div>
+          </fieldset>
+
+          <!-- «Другое» -->
+          <div id="blkOther" class="field" hidden>
+            <span class="t" id="otherTitle">Опишите, что случилось</span>
+            <div id="otherVoiceSlot"></div>
+            <div id="otherTextSlot"></div>
+            <div class="err" id="e-other" hidden>Запишите голосовое или напишите текстом</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- «Не включилась программа»: самопомощь — «наклейка терминала» -->
+      <div id="selfHelp" class="field" hidden>
+        <p class="sh-cat"><span id="shCat"></span> · <button type="button" data-act="change-sub" aria-label="Изменить: выбрать другую проблему с программой">изменить</button></p>
+        <section class="sticker" aria-labelledby="h-sh">
+          <span class="screw tl" aria-hidden="true"></span><span class="screw tr" aria-hidden="true"></span>
+          <span class="screw bl" aria-hidden="true"></span><span class="screw br" aria-hidden="true"></span>
+          <h1 id="h-sh" tabindex="-1"></h1>
+          <p class="sub" id="shSub"></p>
+          <ol class="ysteps" id="shSteps"></ol>
+        </section>
+        <div class="acts">
+          <button class="btn-g" type="button" data-act="sh-ok">Заработало</button>
+          <button class="btn-g" type="button" data-act="sh-fail">Не помогло — отправить заявку</button>
+        </div>
+      </div>
+
+      <div id="rest" class="field" hidden>
+        <div class="card" id="blkAttach">
+          <div id="commentHome">
+            <div class="field" id="commentBox">
+              <label class="t" for="comment" id="commentLbl">Подробнее <i>— по желанию</i></label>
+              <textarea id="comment" maxlength="2000" placeholder="Например: пена шла 10 секунд и пропала"></textarea>
+            </div>
+          </div>
+          <span class="t" id="attachTitle" hidden></span>
+          <div class="pair" id="attachPair">
+            <div id="voiceHome">
+              <div class="field" id="voiceBox">
+                <button type="button" class="addbtn" id="micBtn" data-act="mic"><svg aria-hidden="true"><use href="#i-mic"/></svg>Голосовое</button>
+                <div class="rec" id="rec" hidden><span class="dot" aria-hidden="true"></span><span class="time" id="recTime" role="timer">0:00</span><button type="button" data-act="rec-stop">Готово</button></div>
+                <div class="vprev" id="vprev" hidden><audio id="vaudio" controls preload="metadata" aria-label="Ваше голосовое сообщение"></audio><button type="button" data-act="voice-del">Удалить</button></div>
+                <div class="hint" id="micHint" role="status" hidden></div>
+              </div>
+            </div>
+            <button type="button" class="addbtn" data-act="add-file"><svg aria-hidden="true"><use href="#i-cam"/></svg>Фото / видео</button>
+          </div>
+          <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
+          <ul class="files" id="files" aria-label="Вложения"></ul>
+          <div class="hint" id="fileHint" aria-live="polite"></div>
+        </div>
+
+        <div class="card">
+          <div class="field">
+            <label class="t" for="phone">Ваш телефон</label>
+            <input type="tel" id="phone" inputmode="tel" autocomplete="tel" value="+375 " placeholder="+375 (29) 123-45-67">
+            <div class="err" id="e-phone" hidden>Проверьте номер — по нему мы с вами свяжемся</div>
+          </div>
+          <fieldset class="field">
+            <legend class="t">Как удобнее связаться</legend>
+            <div class="row3" id="contact"></div>
+          </fieldset>
+        </div>
+
+        <input type="text" name="website" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" aria-label="Не заполняйте">
+
+        <button class="btn-y" id="submit" type="submit">Отправить заявку</button>
+        <p class="privacy">Телефон нужен только для связи по этой заявке.</p>
+      </div>
+    </form>
+  </section>
+
+  <!-- ЭКРАН 3: «ЗАРАБОТАЛО» -->
+  <section class="screen center" id="s-ok" aria-labelledby="h-ok">
+    <div class="okc" aria-hidden="true"><svg><use href="#i-check"/></svg></div>
+    <h1 id="h-ok" tabindex="-1">Отлично,<br>хорошей мойки!</h1>
+    <section class="card" aria-labelledby="stuckTitle">
+      <span class="t" id="stuckTitle">Кнопка заедала? <i>Отметьте какая — мы её проверим</i></span>
+      <div class="stuck" id="stuck" role="group" aria-labelledby="stuckTitle"></div>
+      <p class="ok-msg" id="stuckMsg" role="status"></p>
+    </section>
+    <div class="acts"><button class="btn-o" type="button" data-act="home">На главную</button></div>
+  </section>
+
+  <!-- ЭКРАН 4: ЗАЯВКА -->
+  <section class="screen" id="s-done" aria-labelledby="doneTitle">
+    <div class="donehead" role="status" aria-live="polite">
+      <div class="okc" id="doneIco" aria-hidden="true"><svg><use href="#i-check"/></svg></div>
+      <h1 id="doneTitle" tabindex="-1">Заявка принята</h1>
+      <p id="doneText"></p>
+    </div>
+    <div class="numbox" id="numBox">
+      <span class="lbl" id="numLbl">Номер заявки</span>
+      <span class="seg xl" id="numSeg"></span>
+    </div>
+    <div class="upl" id="upl" hidden>
+      <div class="progress" role="progressbar" aria-label="Загрузка вложений" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="uplBar"><i></i></div>
+      <div class="hint" id="uplText" aria-live="polite"></div>
+    </div>
+    <div class="warnbox" id="doneNote" role="alert" hidden>
+      <span id="doneNoteText"></span>
+      <div class="row2">
+        <a class="btn-d" id="noteViber">Viber</a>
+        <a class="btn-d" id="noteWa" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+    <button class="btn-y" type="button" id="retryBtn" data-act="retry" hidden>Отправить ещё раз</button>
+    <div class="warnbox" id="attn" hidden>
+      <b>Внимание</b>
+      <span>Назовите номер заявки, если будете звонить или писать в Viber.</span>
+    </div>
+    <div class="card" id="promoBox" hidden>
+      <label class="check"><input type="checkbox" id="promo">
+        <span><b>Пока ждёте — присылать акции и бонусы мойки?</b><small>Не чаще пары раз в месяц, отписаться можно в любой момент</small></span>
+      </label>
+      <p class="ok-msg" id="promoMsg" role="status"></p>
+    </div>
+  </section>
+  </main>
+</div></div>
+
+<script type="module">
+/* ======================== НАСТРОЙКИ ======================== */
+const CONFIG = {
+  workerUrl: 'https://mtrassa.dowtnohot.workers.dev',     // быстрый сервер Cloudflare (пусто — только через Google)
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbwsicWQuIhtdmMZP-xylBFHSVZ2mZ3f3ap7YH5zfhYhJoTqKYxwgF1GqTSuWX6wcM27/exec',
+  yandexUrl: 'https://yandex.by/maps/-/CXFTm08y',
+  googleUrl: 'https://maps.app.goo.gl/v3ADMhJSPijSms2x8',
+  phone:     '+375296400339',     // рабочий номер для звонков
+  viber:     '+375296400339',     // номер с Viber
+  whatsapp:  '+375296400339',     // номер с WhatsApp
+  responseMinutes: 15,
+  hours: { from: 8, to: 22 },     // когда отвечаете; вне этих часов «Позвонить» скрыт
+  maxPhotos: 10,                  // защита группы от флуда
+  maxVideos: 3,
+  maxVideoMB: 48,                 // через быстрый сервер (предел Telegram — 50 МБ)
+  maxVideoMBSlow: 25,             // если быстрый сервер недоступен и идём через Google
+  maxVideoSec: 60,                // длиннее — сжимаем и обрезаем до первых 60 с
+  maxVoiceSec: 180,
+
+  // категории: идентификаторы уходят в заявку и статистику, тексты — в CONFIG.texts.cat
+  categories: [
+    { id: 'money',   icon: 'i-money' },
+    { id: 'program', icon: 'i-drop', sub: [
+      { id: 'program.nostart',  icon: 'i-power', selfhelp: true, progRequired: true },
+      { id: 'program.nosupply', icon: 'i-drop',  progRequired: true },
+      { id: 'program.pressure', icon: 'i-gauge', progRequired: false }
+    ] },
+    { id: 'other',   icon: 'i-dots' }
+  ],
+  // программы — как кнопки на терминале
+  programs: [
+    { n: 1, name: 'Предварительная мойка' },
+    { n: 2, name: 'Пена' },
+    { n: 3, name: 'Ополаскивание' },
+    { n: 4, name: 'Воск' },
+    { n: 5, name: 'Блеск + сушка' }
+  ],
+  coins: [0.5, 1, 2],             // номиналы монет, р.
+  notes: [5, 10],                 // номиналы купюр, р.
+  maxCount: 20,                   // монет/купюр одного номинала
+  maxSum: 500,                    // р., для «Другая»
+
+  texts: {
+    cat: {
+      'money':            'Терминал не зачислил деньги',
+      'program':          'Проблема с программой',
+      'program.nostart':  'Не включается',
+      'program.nosupply': 'Нет воды, пены или воска',
+      'program.pressure': 'Слабый напор',
+      'other':            'Другое'
+    },
+    subTitle: 'Что именно?',
+    pauseTitle: 'Сначала нажмите паузу',
+    pauseText:  'Пока заполняете форму, время не списывается. Пауза бесплатная.',
+    selfhelpTitle: 'Попробуйте так',
+    selfhelpSub:   'Обычно помогает за 10 секунд',
+    selfhelpSteps: [
+      { title: 'Нажмите паузу',           text: 'Время на паузе не списывается', pause: true },
+      { title: 'Нажмите кнопку программы', text: 'Ещё раз, ту же самую' },
+      { title: 'Не сработало?',            text: 'Снова ПАУЗА, затем нажмите кнопку программы сильнее и подержите секунду' }
+    ],
+    videoHint: 'Видео — снимите 10–15 секунд.'
+  }
+};
+/* =========================================================== */
+
+// ================= 1. УТИЛИТЫ =================
+const $ = id => document.getElementById(id);
+const form = $('form');
+const MB = 1048576;
+const T0 = performance.now();
+const params = new URLSearchParams(location.search);
+const DEBUG = params.get('debug') === '1';
+const dbg = (...a) => { if (DEBUG) console.log(`[${((performance.now() - T0) / 1000).toFixed(3)}s]`, ...a); };
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt = d => d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(',', '');
+const digitsOf = v => String(v).replace(/\D/g, '');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const CAT = {};                                       // id → { id, icon, sub?, parent?, title }
+CONFIG.categories.forEach(c => {
+  CAT[c.id] = Object.assign({ title: CONFIG.texts.cat[c.id] }, c);
+  (c.sub || []).forEach(x => { CAT[x.id] = Object.assign({ title: CONFIG.texts.cat[x.id], parent: c.id }, x); });
+});
+const SUBS = (CAT.program && CAT.program.sub) || [];
+const isProgram = code => !!(CAT[code] && CAT[code].parent === 'program');
+const PROG = Object.fromEntries(CONFIG.programs.map(p => [p.n, p.name]));
+
+function uid(){
+  try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (_) {}
+  try { return [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join(''); } catch (_) {}
+  return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+const readB64 = blob => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result).split(',')[1]);
+  r.onerror = rej;
+  r.readAsDataURL(blob);
+});
+
+// сегментное табло: красные цифры поверх «погашенных» восьмёрок
+function seg(el, text, ghost){
+  const t = String(text);
+  const g = ghost || t.replace(/[^.]/g, '8');
+  el.innerHTML = `<span class="off" aria-hidden="true">${esc(g)}</span><span class="on">${esc(t)}</span>`;
+}
+
+// ================= 2. ПОСТ, ЧАСЫ, ССЫЛКИ =================
+const post = /^\d{1,2}$/.test(params.get('post') || '') ? String(+params.get('post')) : '';   // из QR: ?post=3
+seg($('postSeg'), post || '--', post ? '8'.repeat(post.length) : '88');
+if (!post) $('postSeg').setAttribute('aria-label', 'не указан');
+
+function inHours(){
+  if (!CONFIG.hours) return true;
+  const h = new Date().getHours();
+  return h >= CONFIG.hours.from && h < CONFIG.hours.to;
+}
+const replyShort = () => inHours() ? `в течение ${CONFIG.responseMinutes} минут` : `утром, после ${CONFIG.hours.from}:00`;
+$('helpSub').textContent = 'Не зачислились деньги, не включилась программа, что-то сломалось — ответим ' + replyShort();
+$('formLead').textContent = `Проверим записи с камер и свяжемся с вами ${replyShort()}.`;
+
+$('lnkYandex').href = CONFIG.yandexUrl;
+$('lnkGoogle').href = CONFIG.googleUrl;
+const viberHref = `viber://chat?number=${encodeURIComponent(CONFIG.viber)}`;
+const waHref = text => `https://wa.me/${digitsOf(CONFIG.whatsapp)}` + (text ? `?text=${encodeURIComponent(text)}` : '');
+{
+  const alt = [];
+  if (inHours()) alt.push(`<a href="tel:${esc(CONFIG.phone)}">Позвонить</a>`);
+  if (CONFIG.viber) alt.push(`<a href="${esc(viberHref)}">Viber</a>`);
+  if (CONFIG.whatsapp) alt.push(`<a href="${esc(waHref())}" target="_blank" rel="noopener">WhatsApp</a>`);
+  $('altContacts').innerHTML = alt.join('');
+}
+
+// ================= 3. СТАТИСТИКА И ПРОГРЕВ =================
+const SID = (() => {
+  try {
+    let s = sessionStorage.getItem('moika_sid');
+    if (!s) { s = uid().replace(/-/g, '').slice(0, 16); sessionStorage.setItem('moika_sid', s); }
+    return s;
+  } catch (_) { return uid().replace(/-/g, '').slice(0, 16); }
+})();
+
+// лёгкие анонимные события; ошибки не влияют на форму
+function beacon(obj){
+  try {
+    if (!CONFIG.scriptUrl) return;
+    const body = JSON.stringify(obj);
+    if (navigator.sendBeacon && navigator.sendBeacon(CONFIG.scriptUrl, body)) return;
+    fetch(CONFIG.scriptUrl, { method:'POST', body, keepalive:true, mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' } }).catch(() => {});
+  } catch (_) {}
+}
+const track = (event, extra) => beacon(Object.assign({ action:'event', event, post, sid: SID, t: Date.now() }, extra));
+function pingGoogle(){
+  if (CONFIG.scriptUrl) fetch(CONFIG.scriptUrl + '?ping=1', { mode:'no-cors' }).catch(() => {});
+}
+
+// быстрый сервер: открываем соединение и сразу узнаём, доступен ли он
+const WORKER = CONFIG.workerUrl ? CONFIG.workerUrl.replace(/\/+$/, '') : '';
+let workerDead = !WORKER;
+if (WORKER) {
+  try {
+    const l = document.createElement('link');
+    l.rel = 'preconnect'; l.href = new URL(WORKER).origin; l.crossOrigin = 'anonymous';
+    document.head.appendChild(l);
+  } catch (_) {}
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  fetch(WORKER, { signal: ctrl.signal })
+    .then(r => { if (!r.ok) throw 0; dbg('Worker доступен'); })
+    .catch(() => { workerDead = true; dbg('Worker недоступен — файлы пойдут через Google'); })
+    .finally(() => clearTimeout(t));
+}
+
+// прогрев Google сразу при загрузке: «open» (раз за сессию) или пустой запрос
+(() => {
+  let first = true;
+  try { first = !sessionStorage.getItem('moika_open'); if (first) sessionStorage.setItem('moika_open', '1'); } catch (_) {}
+  if (first) track('open'); else pingGoogle();
+})();
+// пока вкладка видна — повторный прогрев раз в 4 минуты, не больше 3 раз
+{
+  let left = 3;
+  const timer = setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    pingGoogle();
+    if (--left <= 0) clearInterval(timer);
+  }, 4 * 60 * 1000);
+}
+
+// ================= 4. НАВИГАЦИЯ: экраны и история браузера =================
+// Каждый переход — запись в истории, поэтому «← Назад» в шапке, системная «назад» на Android и свайп на iPhone
+// ведут одинаково — на шаг назад. Путь в истории всегда совпадает с картой переходов:
+//   главный → список проблем → «Что именно?» → самопомощь → «Отлично» | форма;
+//   «Что именно?» → форма;   список → форма (деньги, другое);   форма → отправка / ошибка.
+// Принятая заявка делает старые записи формы недействительными: «назад» с «Заявка принята» — на главный.
+const VIEW_SCREEN = { choice: 's-choice', cats: 's-form', sub: 's-form', selfhelp: 's-form', form: 's-form', ok: 's-ok', send: 's-done' };
+const nav = { view: 'choice', idx: 0, stack: ['choice'], gen: 0, submitted: false };
+function go(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  const top = $('top');
+  top.dataset.mode = id === 's-choice' ? 'main' : 'back';
+  $('postSeg').classList.toggle('lg', top.dataset.mode === 'main');
+  scrollTo(0, 0);
+  const h = [...$(id).querySelectorAll('h1[tabindex]')].find(x => !x.hidden && !x.closest('[hidden]'));
+  if (h) h.focus({ preventScroll: true });
+}
+function show(view){
+  nav.view = view;
+  if (VIEW_SCREEN[view] === 's-form') layout(view);
+  go(VIEW_SCREEN[view]);
+}
+function navTo(view){                              // вперёд: новая запись в истории
+  nav.idx++;
+  nav.stack.length = nav.idx;
+  nav.stack.push(view);
+  try { history.pushState({ v: view, i: nav.idx, g: nav.gen }, ''); } catch (_) {}
+  show(view);
+}
+function navBackTo(view){                          // назад к уже пройденному экрану
+  const i = nav.stack.lastIndexOf(view, nav.idx - 1);
+  if (i >= 0) history.go(i - nav.idx); else navTo(view);
+}
+function navBack(){ if (nav.idx > 0) history.back(); else show('choice'); }
+window.addEventListener('popstate', e => {
+  const s = e.state;
+  if (!s || typeof s.v !== 'string' || !VIEW_SCREEN[s.v]) return;     // не наша запись
+  nav.idx = s.i;
+  if (s.g < nav.gen && s.v !== 'choice') { history.go(-s.i); return; }   // заявка уже принята — на главный
+  show(s.v);
+});
+try { history.replaceState({ v: 'choice', i: 0, g: 0 }, ''); } catch (_) {}   // открытие по QR — одна запись
+$('postSeg').classList.add('lg');
+
+// ================= 5. ФОРМА: адаптивный сценарий =================
+const state = { cat: '', selfhelpTried: false, shownSelfhelp: false };   // cat — идентификатор: money, program.nostart, …
+const cnt = { coins: {}, notes: {} };                    // сколько монет/купюр каждого номинала
+CONFIG.coins.forEach(v => { cnt.coins[v] = 0; });
+CONFIG.notes.forEach(v => { cnt.notes[v] = 0; });
+
+const coinLabel = v => v < 1 ? `${Math.round(v * 100)} к.` : `${v} р.`;
+function coinName(v){
+  if (v < 1) return `${Math.round(v * 100)} копеек`;
+  const n = v % 100, d = v % 10;
+  const w = n >= 11 && n <= 14 ? 'рублей' : d === 1 ? 'рубль' : d >= 2 && d <= 4 ? 'рубля' : 'рублей';
+  return `${v} ${w}`;
+}
+
+{
+  // категории и «Что именно?» — крупные кнопки-плашки
+  const plate = (c, act) =>
+    `<button type="button" class="cat" data-act="${act}" data-cat="${esc(c.id)}" aria-pressed="false">` +
+    `<svg aria-hidden="true"><use href="#${esc(c.icon)}"/></svg><span>${esc(CAT[c.id].title)}</span></button>`;
+  $('catList').innerHTML = CONFIG.categories.map(c => plate(c, 'cat')).join('');
+  $('subList').innerHTML = SUBS.map(c => plate(c, 'sub')).join('');
+
+  // программы — кружки с номерами
+  $('progs').innerHTML = CONFIG.programs.map(p =>
+    `<label><input class="vh" type="checkbox" name="prog" value="${p.n}"><span class="prog"><span class="num" aria-hidden="true">${p.n}</span>` +
+    `<span><span class="vh">Программа ${p.n}: </span>${esc(p.name)}</span></span></label>`).join('');
+  $('stuck').innerHTML = CONFIG.programs.map(p =>
+    `<button type="button" data-act="stuck" data-n="${p.n}" aria-pressed="false" aria-label="${p.n} — ${esc(p.name)}">${p.n}</button>`).join('');
+
+  // чем платили
+  const pays = [['notes', 'Купюры'], ['coins', 'Монеты']];
+  $('payChips').innerHTML = pays.map(([v, t]) =>
+    `<label><input class="vh" type="radio" name="pay" value="${v}"><span class="chip">${t}</span></label>`).join('');
+
+  const row = (kind, v) => {
+    const label = coinLabel(v), name = coinName(v);
+    return `<div class="cnt zero" data-kind="${kind}" data-v="${v}">` +
+      `<span class="coin${kind === 'notes' ? ' note' : ''}" aria-hidden="true">${label}</span>` +
+      `<span class="nm">${name}</span>` +
+      `<button type="button" class="pm minus" data-act="cnt" data-d="-1" aria-label="Меньше: ${name}" disabled>−</button>` +
+      `<span class="n" aria-live="polite" aria-label="${name}: 0">0</span>` +
+      `<button type="button" class="pm plus" data-act="cnt" data-d="1" aria-label="Больше: ${name}">+</button></div>`;
+  };
+  $('coinRows').innerHTML = CONFIG.coins.map(v => row('coins', v)).join('');
+  $('noteRows').innerHTML = CONFIG.notes.map(v => row('notes', v)).join('');
+
+  // способ связи
+  const contacts = ['Звонок'].concat(CONFIG.viber ? ['Viber'] : [], CONFIG.whatsapp ? ['WhatsApp'] : []);
+  $('contact').innerHTML = contacts.map(c =>
+    `<label><input class="vh" type="radio" name="contact" value="${esc(c)}"><span class="chip">${esc(c)}</span></label>`).join('');
+  $('contact').style.gridTemplateColumns = `repeat(${contacts.length},minmax(0,1fr))`;
+  form.querySelector('input[name="contact"]').checked = true;
+
+  // самопомощь и пауза
+  const T = CONFIG.texts;
+  $('pauseTitle').textContent = T.pauseTitle;
+  $('pauseText').textContent = T.pauseText;
+  $('h-sh').textContent = T.selfhelpTitle;
+  $('shSub').textContent = T.selfhelpSub;
+  $('shCat').textContent = `${CAT.program.title} · ${CAT['program.nostart'].title}`;
+  $('shSteps').innerHTML = T.selfhelpSteps.map((s, i) =>
+    `<li><span class="n" aria-hidden="true">${i + 1}</span><span class="tx"><b>${esc(s.title)}</b><span class="d">${esc(s.text)}</span></span>` +
+    (s.pause ? '<span class="pbtn" aria-hidden="true"></span>' : '') + '</li>').join('');
+}
+
+const chosen = name => form.elements[name] ? (form.elements[name].value || '') : '';
+const programs = () => [...form.querySelectorAll('input[name="prog"]:checked')].map(i => +i.value);
+const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) && n > 0 ? Math.min(n, CONFIG.maxSum) : 0; };
+const round2 = n => Math.round(n * 100) / 100;
+
+// сумма — как её пересчитает сервер
+function moneyData(){
+  const m = chosen('pay');
+  if (m === 'coins') {
+    const money = {}; let total = 0;
+    CONFIG.coins.forEach(v => { money[String(v)] = cnt.coins[v]; total += v * cnt.coins[v]; });
+    return { method: m, money, total: round2(total) };
+  }
+  if (m === 'notes') {
+    const money = {}; let total = 0;
+    CONFIG.notes.forEach(v => { money[String(v)] = cnt.notes[v]; total += v * cnt.notes[v]; });
+    const other = $('otherNoteBtn').getAttribute('aria-pressed') === 'true' ? num($('otherNote').value) : 0;
+    if (other) { money.other = other; total += other; }
+    return { method: m, money, total: round2(total) };
+  }
+  return { method: '', money: null, total: 0 };
+}
+function paintMoney(){
+  const m = chosen('pay');
+  $('payCoins').hidden = m !== 'coins';
+  $('payNotes').hidden = m !== 'notes';
+  $('totalBox').hidden = !m;
+  const t = moneyData().total;
+  const txt = t.toFixed(2);
+  seg($('totalSeg'), txt, txt.replace(/\d/g, '8').padStart(5, '8'));
+  $('totalSeg').setAttribute('aria-label', `${txt.replace('.', ',')} р.`);
+  if (t > 0) showErr('e-money', false);
+}
+function paintCounter(rowEl){
+  const kind = rowEl.dataset.kind, v = +rowEl.dataset.v, n = cnt[kind][v];
+  rowEl.classList.toggle('zero', n === 0);
+  rowEl.querySelector('.n').textContent = n;
+  rowEl.querySelector('.n').setAttribute('aria-label', `${coinName(v)}: ${n}`);
+  rowEl.querySelector('.minus').disabled = n === 0;
+  rowEl.querySelector('.plus').disabled = n >= CONFIG.maxCount;
+}
+
+// что показать на экране формы: список проблем, «Что именно?», самопомощь или поля выбранной проблемы
+const LEAD = $('formLead').textContent;
+function layout(view){
+  const c = state.cat;
+  const sub = view === 'sub';
+  const cats = !sub && (view === 'cats' || !c);
+  const selfhelp = !cats && !sub && view === 'selfhelp';
+  const fields = !cats && !sub && !selfhelp;
+  $('h-form').textContent = sub ? CONFIG.texts.subTitle : 'Что случилось?';
+  $('formLead').textContent = sub ? CAT.program.title : LEAD;
+  $('h-form').hidden = selfhelp;
+  $('formLead').hidden = selfhelp;
+  $('catList').hidden = !cats;
+  $('subList').hidden = !sub;
+  $('catSel').hidden = !fields;
+  $('pauseBox').hidden = !fields || c === 'money';
+  $('selfHelp').hidden = !selfhelp;
+  $('rest').hidden = !fields;
+  const top = c && CAT[c] ? (CAT[c].parent || c) : '';
+  $('catList').querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === top)));
+  $('subList').querySelectorAll('.cat').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === c)));
+  if (selfhelp && !state.shownSelfhelp) { state.shownSelfhelp = true; track('selfhelp_shown'); }
+  if (!fields) return;
+
+  const cat = CAT[c];
+  const quiet = isProgram(c);                       // подтип программы — тихая строка вместо жёлтой плашки
+  $('quietLine').hidden = !quiet;
+  $('plaque').hidden = quiet;
+  $('catBody').classList.toggle('plain', quiet);
+  $('quietText').textContent = quiet ? `${CAT.program.title} · ${cat.title}` : '';
+  $('catName').textContent = cat.title;
+  $('plaqueIco').setAttribute('href', '#' + cat.icon);
+
+  $('blkMoney').hidden = c !== 'money';
+  $('blkProg').hidden = !quiet;
+  $('progTitle').innerHTML = quiet && !cat.progRequired ? 'Какая программа? <i>— по желанию</i>' : 'Какая программа? <i>— можно несколько</i>';
+  $('blkOther').hidden = c !== 'other';
+  $('blkAttach').hidden = c === 'money';            // в «деньгах» — без вложений и «Подробнее»
+
+  // поле текста и голосовое: в «Другое» — главные, в остальных — в блоке вложений
+  const other = c === 'other';
+  (other ? $('otherVoiceSlot') : $('voiceHome')).appendChild($('voiceBox'));
+  (other ? $('otherTextSlot') : $('commentHome')).appendChild($('commentBox'));
+  $('micBtn').classList.toggle('big', other);
+  $('commentLbl').innerHTML = other ? 'Или напишите текстом' : 'Подробнее <i>— по желанию</i>';
+  $('comment').placeholder = other ? 'Что случилось?' : 'Например: пена шла 10 секунд и пропала';
+  $('commentHome').hidden = other || c === 'money';
+  const title = c === 'money' ? 'Фото табло <i>— по желанию</i>' : other ? 'Фото / видео <i>— по желанию</i>' : '';
+  $('attachTitle').innerHTML = title;
+  $('attachTitle').hidden = !title;
+  paintPair();
+}
+function paintPair(){
+  const inPair = $('voiceHome').contains($('voiceBox'));
+  const voiceBusy = !$('rec').hidden || !$('vprev').hidden;
+  $('attachPair').classList.toggle('solo', !inPair || $('micBtn').hidden && !voiceBusy);
+  $('attachPair').classList.toggle('wide', inPair && voiceBusy);
+  $('voiceHome').hidden = !inPair || ($('micBtn').hidden && !voiceBusy);
+}
+
+function selectCat(id){
+  showErr('e-cat', false);
+  if (CAT[id].sub) { navTo('sub'); return; }        // «Проблема с программой» → «Что именно?»
+  state.cat = id;
+  navTo('form');
+}
+function selectSub(id){
+  if (state.cat !== id) state.shownSelfhelp = false;
+  state.cat = id;
+  navTo(CAT[id].selfhelp && !state.selfhelpTried ? 'selfhelp' : 'form');
+}
+
+// одно делегирование на всю форму
+form.addEventListener('change', e => {
+  const t = e.target;
+  if (t.name === 'pay') { paintMoney(); showErr('e-money', false); }
+  else if (t.name === 'prog') showErr('e-prog', false);
+  else if (t.id === 'fileInput') { addFiles(t.files); t.value = ''; }
+});
+form.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'phone') onPhoneInput(t);
+  else if (t.id === 'comment') showErr('e-other', false);
+  else if (t.id === 'otherNote') paintMoney();
+});
+
+// ================= 6. ТЕЛЕФОН =================
+function phoneDigits(v){
+  let d = digitsOf(v);
+  if (d.startsWith('80')) d = '375' + d.slice(2);
+  return d;
+}
+function formatPhone(v){
+  const d = phoneDigits(v);
+  if (!d.startsWith('375')) return '+' + d;
+  const r = d.slice(3, 12);
+  let s = '+375';
+  if (r.length) s += ' (' + r.slice(0, 2);
+  if (r.length >= 2) s += ')';
+  if (r.length > 2) s += ' ' + r.slice(2, 5);
+  if (r.length > 5) s += '-' + r.slice(5, 7);
+  if (r.length > 7) s += '-' + r.slice(7, 9);
+  return s;
+}
+function onPhoneInput(el){
+  const atEnd = el.selectionStart === el.value.length;
+  const f = formatPhone(el.value);
+  if (atEnd && f !== el.value) el.value = f;
+  showErr('e-phone', false);
+}
+function phoneValid(v){
+  const d = phoneDigits(v);
+  return d.startsWith('375') ? d.length === 12 : d.length >= 10 && d.length <= 15;
+}
+
+// ================= 7. ОШИБКИ (связаны с полями через aria-describedby) =================
+const ERR_TARGET = { 'e-cat':'catList', 'e-money':'blkMoney', 'e-prog':'progs', 'e-other':'comment', 'e-phone':'phone' };
+function showErr(id, on, text){
+  const err = $(id);
+  if (text) err.textContent = text;
+  if (err.hidden === !on) return;
+  err.hidden = !on;
+  const target = $(ERR_TARGET[id]);
+  const ids = Object.keys(ERR_TARGET).filter(k => ERR_TARGET[k] === ERR_TARGET[id] && !$(k).hidden);
+  if (ids.length) { target.setAttribute('aria-describedby', ids.join(' ')); if (target.matches('input, textarea')) target.setAttribute('aria-invalid', 'true'); }
+  else { target.removeAttribute('aria-describedby'); target.removeAttribute('aria-invalid'); }
+}
+
+// ================= 8. ГОЛОСОВОЕ (MediaRecorder — только при первом нажатии) =================
+const rec = { mr: null, stream: null, chunks: [], t0: 0, tick: 0, done: null };
+let voice = null;                  // текущее голосовое: { blob, type, name, url, itemId }
+const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+if (!canRecord) $('micBtn').hidden = true;
+const fmtSec = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const micMsg = t => { $('micHint').textContent = t; $('micHint').hidden = !t; };
+const isRecording = () => !!rec.mr && rec.mr.state === 'recording';
+
+async function startRecording(){
+  micMsg('');
+  try { rec.stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (_) { micMsg('Нет доступа к микрофону. Разрешите его в настройках браузера или напишите текстом.'); return; }
+  const mime = ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm']
+    .find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+  const opts = { audioBitsPerSecond: 32000 };            // для речи достаточно
+  if (mime) opts.mimeType = mime;
+  try { rec.mr = new MediaRecorder(rec.stream, opts); }
+  catch (_) { rec.mr = new MediaRecorder(rec.stream); }
+  rec.chunks = [];
+  rec.done = new Promise(resolve => {
+    rec.mr.ondataavailable = e => { if (e.data && e.data.size) rec.chunks.push(e.data); };
+    rec.mr.onstop = () => {
+      clearInterval(rec.tick);
+      rec.stream.getTracks().forEach(t => t.stop());
+      $('rec').hidden = true;
+      const type = (rec.mr.mimeType || mime || 'audio/webm').split(';')[0];
+      const blob = new Blob(rec.chunks, { type });
+      if (blob.size < 500) { $('micBtn').hidden = false; paintPair(); micMsg('Запись не получилась — попробуйте ещё раз.'); resolve(null); return; }
+      const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
+      if (voice) removeItem(voice.itemId);
+      voice = { blob, type, name: 'voice.' + ext, url: URL.createObjectURL(blob) };
+      voice.itemId = addVoiceItem(voice);            // сразу уходит в предзагрузку
+      $('vaudio').src = voice.url;
+      $('vprev').hidden = false;
+      paintPair();
+      showErr('e-other', false);
+      resolve(voice);
+    };
+  });
+  rec.mr.start(1000);
+  rec.t0 = Date.now();
+  $('micBtn').hidden = true; $('rec').hidden = false; $('recTime').textContent = '0:00';
+  paintPair();
+  showErr('e-other', false);
+  ensureDraft();
+  rec.tick = setInterval(() => {
+    const s = Math.floor((Date.now() - rec.t0) / 1000);
+    $('recTime').textContent = fmtSec(s) + ' / ' + fmtSec(CONFIG.maxVoiceSec);
+    if (s >= CONFIG.maxVoiceSec && isRecording()) rec.mr.stop();
+  }, 250);
+}
+function stopRecording(){ if (isRecording()) rec.mr.stop(); return rec.done || Promise.resolve(voice); }
+function deleteVoice(){
+  if (voice) { removeItem(voice.itemId); URL.revokeObjectURL(voice.url); }
+  voice = null;
+  $('vaudio').removeAttribute('src');
+  $('vprev').hidden = true;
+  $('micBtn').hidden = !canRecord;
+  paintPair();
+}
+
+// ================= 9. ВЛОЖЕНИЯ: модель =================
+// Каждое вложение проходит путь:
+//   prep (сжатие) → ready → uploading (предзагрузка в Worker) → staged → committed (переслано в заявку)
+// Запасные исходы: failed → delivered (после номера через Worker или Google) | lost | big | removed.
+const KIND_NAME = { img: 'photo', vid: 'video', voice: 'voice' };
+const KIND_RANK = { voice: 0, img: 1, vid: 2 };                 // приоритет очереди: голос → фото → видео
+const PART_RANGE = { img: [1, 30], vid: [100, 109], voice: [200, 209] };
+const att = { draft: null, draftP: null, items: new Map(), next: { img: 1, vid: 100, voice: 200 }, order: 0 };
+const up = { running: new Set(), paused: false, max: 2, speed: 0 };   // не больше 2 загрузок: аплинк узкий
+let ticket = null, claimed = false;                             // номер заявки и «Worker знает номер»
+
+const live = () => [...att.items.values()].filter(it => it.status !== 'removed');
+const videoLimit = () => workerDead ? CONFIG.maxVideoMBSlow : CONFIG.maxVideoMB;
+$('fileHint').textContent = CONFIG.texts.videoHint;
+
+function newItem(kind, file){
+  const [from, to] = PART_RANGE[kind];
+  const part = att.next[kind]++;
+  const it = { id: uid(), kind, file, blob: null, size: file ? file.size : 0, part, noPre: part > to || part < from,
+    status: 'prep', loaded: 0, order: att.order++, waiters: [], t: { add: performance.now() }, path: '' };
+  att.items.set(it.id, it);
+  return it;
+}
+function setStatus(it, s){
+  it.status = s;
+  const w = it.waiters; it.waiters = [];
+  w.forEach(f => f());
+  if (ticket) paintUpl();
+  pump();
+}
+const changed = it => new Promise(r => it.waiters.push(r));
+function wakeAll(){ att.items.forEach(it => { const w = it.waiters; it.waiters = []; w.forEach(f => f()); }); }
+
+function addVoiceItem(v){
+  const it = newItem('voice', null);
+  it.blob = v.blob; it.size = v.blob.size; it.name = v.name;
+  dbg(`голосовое: ${(it.size / 1024).toFixed(0)} КБ`);
+  setStatus(it, 'ready');
+  return it.id;
+}
+
+function addFiles(list){
+  let msg = '';
+  for (const f of list) {
+    const isVid = f.type.startsWith('video/') || /\.(mov|mp4|m4v|3gp|avi|mkv|webm)$/i.test(f.name);
+    const isImg = !isVid && (f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name));
+    if (!isVid && !isImg) continue;
+    const kind = isVid ? 'vid' : 'img';
+    const count = live().filter(x => x.kind === kind).length;
+    if (kind === 'img' && count >= CONFIG.maxPhotos) { msg = `Можно приложить до ${CONFIG.maxPhotos} фото.`; continue; }
+    if (kind === 'vid' && count >= CONFIG.maxVideos) { msg = `Можно приложить до ${CONFIG.maxVideos} видео.`; continue; }
+    const it = newItem(kind, f);
+    it.url = URL.createObjectURL(f);
+    it.name = f.name || (kind === 'img' ? 'photo.jpg' : 'video.mp4');
+    it.el = thumb(it);
+    $('files').appendChild(it.el);                  // добавляем только новый элемент
+    if (kind === 'img') prepPhoto(it); else prepVideo(it);
+  }
+  updateHint(msg);
+  ensureDraft();
+}
+
+function thumb(it){
+  const li = document.createElement('li');
+  li.className = 'thumb';
+  li.dataset.id = it.id;
+  const label = it.kind === 'img' ? 'фото' : 'видео';
+  li.append(label);
+  if (it.kind === 'img') {
+    const img = new Image();
+    img.alt = ''; img.decoding = 'async'; img.src = it.url;
+    img.addEventListener('error', () => img.remove(), { once: true });
+    li.append(img);
+  } else {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = it.url + '#t=0.1';
+    it.vel = v;
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = 'видео';
+    it.tag = tag;
+    li.append(v, tag);
+  }
+  const del = document.createElement('button');
+  del.type = 'button'; del.dataset.act = 'remove-file'; del.textContent = '×';
+  del.setAttribute('aria-label', 'Удалить ' + label);
+  li.append(del);
+  return li;
+}
+function setTag(it, text, big){
+  if (!it.tag) return;
+  it.tag.textContent = text;
+  it.tag.classList.toggle('big', !!big);
+}
+
+function removeItem(id){
+  const it = att.items.get(id);
+  if (!it || it.status === 'removed') return;
+  const wasStagedOrUp = it.status === 'staged' || it.status === 'uploading';
+  it.status = 'removed';
+  if (it.abort) it.abort();                              // идёт предзагрузка — отменяем
+  if (it.vcancel) it.vcancel();                          // идёт сжатие — останавливаем
+  if (wasStagedOrUp && att.draft) {                      // уже в служебной группе — помечаем удалённым
+    fetch(`${WORKER}/pre-del?token=${encodeURIComponent(att.draft.token)}&part=${it.part}`, { method: 'POST' }).catch(() => {});
+  }
+  if (it.url) URL.revokeObjectURL(it.url);
+  if (it.el) it.el.remove();                             // удаляем только этот элемент
+  const w = it.waiters; it.waiters = []; w.forEach(f => f());
+  updateHint('');
+  pump();
+}
+function updateHint(msg){
+  const items = live();
+  const big = items.some(x => x.status === 'big');
+  const trimmed = items.some(x => x.trimmed);
+  $('fileHint').textContent = msg || (big
+    ? `Видео больше ${videoLimit()} МБ не пройдёт через форму — после отправки заявки предложим переслать его в Viber или WhatsApp.`
+    : trimmed ? 'Видео длиннее минуты — отправим первые 60 секунд.' : CONFIG.texts.videoHint);
+}
+
+// ================= 10. ФОТО: сжатие при выборе =================
+let prepRunning = 0;
+const prepWaiting = [];
+function queuePrep(file){                // не больше двух одновременно — слабые телефоны не подвисают
+  return new Promise(resolve => {
+    const run = async () => {
+      prepRunning++;
+      try { resolve(await prepImage(file)); } catch (_) { resolve(null); }
+      finally { prepRunning--; const next = prepWaiting.shift(); if (next) next(); }
+    };
+    prepRunning < 2 ? run() : prepWaiting.push(run);
+  });
+}
+async function prepPhoto(it){
+  const t0 = performance.now();
+  const b = await queuePrep(it.file);
+  if (it.status === 'removed') return;
+  it.blob = b || (it.file.size <= 15 * MB ? it.file : null);
+  if (!it.blob) { setStatus(it, 'lost'); return; }
+  if (!b) it.name = it.file.name || 'photo';               // не сжалось (редкий формат) — как есть, документом
+  else it.name = `photo${it.part}.jpg`;
+  it.size = it.blob.size;
+  dbg(`фото ${it.part}: ${(it.file.size / MB).toFixed(2)} МБ → ${(it.size / MB).toFixed(2)} МБ за ${((performance.now() - t0) / 1000).toFixed(1)} с`);
+  setStatus(it, 'ready');
+}
+
+// фото -> JPEG до 1280 px, 0.75 (обычно 100–250 КБ); ориентация из EXIF
+function loadImg(blob){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(blob);
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('decode')); };
+    img.src = url;
+  });
+}
+async function compressImage(blob){
+  let src, w, h, close = () => {};
+  try {
+    src = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+    w = src.width; h = src.height; close = () => src.close();
+  } catch (_) {
+    src = await loadImg(blob); w = src.naturalWidth; h = src.naturalHeight;
+  }
+  try {
+    const k = Math.min(1, 1280 / Math.max(w, h));
+    const cw = Math.round(w * k), ch = Math.round(h * k);
+    if (typeof OffscreenCanvas !== 'undefined') {
+      try {
+        const oc = new OffscreenCanvas(cw, ch);
+        const ctx = oc.getContext('2d');
+        if (ctx && oc.convertToBlob) { ctx.drawImage(src, 0, 0, cw, ch); return await oc.convertToBlob({ type: 'image/jpeg', quality: 0.75 }); }
+      } catch (_) {}
+    }
+    const c = document.createElement('canvas');
+    c.width = cw; c.height = ch;
+    c.getContext('2d').drawImage(src, 0, 0, cw, ch);
+    return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/jpeg', 0.75));
+  } finally { close(); }
+}
+
+// HEIC: Safari открывает сам, Chrome — нет. Тогда подгружаем конвертер (только в этот момент).
+const isHeic = f => /hei[cf]/i.test(f.type || '') || /\.(heic|heif)$/i.test(f.name || '');
+let heicLib = null;
+function loadHeic2any(){
+  if (window.heic2any) return Promise.resolve(window.heic2any);
+  if (heicLib) return heicLib;
+  const urls = [
+    'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js'
+  ];
+  heicLib = urls.reduce((prev, u) => prev.catch(() => new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = u; s.async = true;
+    s.onload = () => window.heic2any ? res(window.heic2any) : rej();
+    s.onerror = rej;
+    document.head.appendChild(s);
+  })), Promise.reject());
+  heicLib.catch(() => { heicLib = null; });
+  return heicLib;
+}
+async function prepImage(file){
+  try { return await compressImage(file); } catch (_) {}
+  if (isHeic(file)) {
+    try {
+      const convert = await loadHeic2any();
+      let jpg = await convert({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+      if (Array.isArray(jpg)) jpg = jpg[0];
+      return await compressImage(jpg);
+    } catch (_) {}
+  }
+  return null;
+}
+
+// ================= 11. ВИДЕО: сжатие на телефоне (WebCodecs, в отдельном потоке) =================
+// 1080p → 720p, H.264 ~2 Мбит/с (постоянный), до 30 к/с, звук AAC без перекодирования, не длиннее 60 с.
+// «Гонка»: оригинал начинает грузиться сразу, сжатие идёт параллельно. Когда сжатие готово —
+// побеждает то, что дойдёт раньше при измеренной скорости. Длиннее 60 с или больше 48 МБ — только сжатие.
+// Нет WebCodecs / не поддерживается кодек / не уложились по времени / выигрыш < 20% — уходит оригинал.
+const VIDEO_LIBS = [
+  ['https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js', 'https://fastly.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js'],
+  ['https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js', 'https://fastly.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js']
+];
+const VIDEO_CODECS = 'avc';            // выходной кодек: H.264 (единственный, который везде играет)
+const canCompressVideo = () => typeof VideoEncoder === 'function' && typeof VideoDecoder === 'function' &&
+  typeof OffscreenCanvas === 'function' && typeof Worker === 'function';
+
+const VIDEO_WORKER_SRC = String.raw`
+'use strict';
+self.onmessage = async e => {
+  const o = e.data;
+  try {
+    for (const alts of o.libs) {
+      let ok = false;
+      for (const u of alts) { try { importScripts(u); ok = true; break; } catch (_) {} }
+      if (!ok) throw new Error('libs');
+    }
+    const out = await transcode(o);
+    self.postMessage({ done: true, blob: out.blob, trimmed: out.trimmed, info: out.info });
+  } catch (err) {
+    self.postMessage({ error: String((err && err.message) || err) });
+  }
+};
+function rotationOf(m) {
+  if (!m) return 0;
+  const deg = ((Math.round(Math.atan2(m[1] / 65536, m[0] / 65536) * 180 / Math.PI) % 360) + 360) % 360;
+  return [0, 90, 180, 270, 360].reduce((b, d) => Math.abs(d - deg) < Math.abs(b - deg) ? d : b, 0) % 360;
+}
+function descOf(trak) {
+  for (const entry of trak.mdia.minf.stbl.stsd.entries) {
+    const box = entry.avcC || entry.hvcC || entry.vpcC || entry.av1C;
+    if (box) {
+      const s = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+      box.write(s);
+      return new Uint8Array(s.buffer, 8);
+    }
+  }
+  return undefined;
+}
+function aacConfigOf(trak) {
+  try { return trak.mdia.minf.stbl.stsd.entries[0].esds.esd.descs[0].descs[0].data; } catch (_) { return undefined; }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function transcode(o) {
+  const t0 = Date.now();
+  const file = o.file;
+  const mp4 = MP4Box.createFile();
+  let info = null, demuxErr = null;
+  mp4.onReady = i => { info = i; };
+  mp4.onError = e => { demuxErr = e; };
+  const CH = 4 * 1024 * 1024;
+  for (let off = 0; off < file.size; off += CH) {
+    const buf = await file.slice(off, off + CH).arrayBuffer();
+    buf.fileStart = off;
+    mp4.appendBuffer(buf);
+  }
+  mp4.flush();
+  if (demuxErr || !info) throw new Error('demux');
+  const vt = info.videoTracks[0];
+  if (!vt) throw new Error('no video');
+  const at = info.audioTracks[0];
+  if (at && !/^mp4a\.40/.test(at.codec)) throw new Error('audio ' + at.codec);
+
+  const srcW = vt.video.width, srcH = vt.video.height;
+  const durSec = (vt.duration / vt.timescale) || (info.duration / info.timescale);
+  const limitSec = Math.min(durSec, o.maxSec);
+  const trimmed = durSec > o.maxSec + 0.5;
+  const srcFps = vt.nb_samples / (durSec || 1);
+  const fps = Math.max(1, Math.min(o.maxFps, Math.round(srcFps) || 30));
+  const k = Math.min(1, o.maxSide / Math.max(srcW, srcH));
+  const W = Math.max(2, Math.round(srcW * k / 2) * 2), H = Math.max(2, Math.round(srcH * k / 2) * 2);
+  // исходник уже лёгкий — не раздуваем его: берём не больше 90% исходного битрейта
+  const bitrate = vt.bitrate > 0 ? Math.round(Math.min(o.bitrate, Math.max(400000, vt.bitrate * 0.9))) : o.bitrate;
+  const rotation = rotationOf(vt.matrix);          // поворот сохраняем в метаданных, как в оригинале
+
+  const decCfg = { codec: vt.codec, codedWidth: srcW, codedHeight: srcH, description: descOf(mp4.getTrackById(vt.id)) };
+  if (!(await VideoDecoder.isConfigSupported(decCfg)).supported) throw new Error('decode ' + vt.codec);
+  const candidates = o.codecs === 'vp9'
+    ? [{ codec: 'vp09.00.31.08', mux: 'vp9' }]
+    : [{ codec: 'avc1.640028', mux: 'avc' }, { codec: 'avc1.4d401f', mux: 'avc' }, { codec: 'avc1.42001f', mux: 'avc' }];
+  let enc = null;
+  // постоянный битрейт — первым: в «переменном» режиме iPhone выдаёт вдвое меньше заказанного и мылит картинку
+  for (const c of candidates) {
+    for (const mode of ['constant', null]) {
+      const cfg = { codec: c.codec, width: W, height: H, bitrate, framerate: fps, latencyMode: 'quality' };
+      if (mode) cfg.bitrateMode = mode;
+      if (c.mux === 'avc') cfg.avc = { format: 'avc' };
+      try { if ((await VideoEncoder.isConfigSupported(cfg)).supported) { enc = { cfg, mux: c.mux }; break; } } catch (_) {}
+    }
+    if (enc) break;
+  }
+  if (!enc) throw new Error('encode unsupported');
+
+  const target = new Mp4Muxer.ArrayBufferTarget();
+  const muxer = new Mp4Muxer.Muxer({
+    target,
+    video: { codec: enc.mux, width: W, height: H, rotation, frameRate: fps },
+    audio: at ? { codec: 'aac', sampleRate: at.audio.sample_rate, numberOfChannels: at.audio.channel_count } : undefined,
+    fastStart: 'in-memory',
+    firstTimestampBehavior: 'offset'
+  });
+
+  const vSamples = [], aSamples = [];
+  mp4.onSamples = (id, user, samples) => { for (const s of samples) (id === vt.id ? vSamples : aSamples).push(s); };
+  mp4.setExtractionOptions(vt.id, null, { nbSamples: 1e9 });
+  if (at) mp4.setExtractionOptions(at.id, null, { nbSamples: 1e9 });
+  mp4.start();
+  if (!vSamples.length) throw new Error('no samples');
+
+  // звук — без перекодирования (AAC как есть), до 60 с
+  if (at) {
+    const desc = aacConfigOf(mp4.getTrackById(at.id));
+    let first = true;
+    for (const s of aSamples) {
+      const ts = s.cts * 1e6 / s.timescale;
+      if (ts >= limitSec * 1e6) break;
+      muxer.addAudioChunkRaw(s.data, 'key', ts, s.duration * 1e6 / s.timescale, first ? { decoderConfig: {
+        codec: at.codec, sampleRate: at.audio.sample_rate, numberOfChannels: at.audio.channel_count, description: desc } } : undefined);
+      first = false;
+    }
+  }
+
+  let fail = null;
+  const canvas = new OffscreenCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  const encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: e => { fail = e; } });
+  encoder.configure(enc.cfg);
+  const minGap = 1e6 / fps * 0.85;
+  const total = Math.max(1, vSamples.filter(s => s.cts / s.timescale < limitSec).length);
+  let lastTs = -1e12, n = 0, decoded = 0;
+  const decoder = new VideoDecoder({
+    output: frame => {
+      decoded++;
+      const ts = frame.timestamp;
+      if (ts >= limitSec * 1e6 || ts - lastTs < minGap) { frame.close(); return; }
+      lastTs = ts;
+      ctx.drawImage(frame, 0, 0, W, H);
+      frame.close();
+      const vf = new VideoFrame(canvas, { timestamp: ts, duration: Math.round(1e6 / fps) });
+      encoder.encode(vf, { keyFrame: n % (fps * 2) === 0 });
+      vf.close();
+      n++;
+      if (n % 10 === 0) self.postMessage({ progress: Math.min(0.99, decoded / total) });
+    },
+    error: e => { fail = e; }
+  });
+  decoder.configure(decCfg);
+  // не дольше длительности ролика × 1,5 — иначе выгоднее отправить оригинал
+  const deadline = t0 + Math.max(6, limitSec * 1.5) * 1000;
+  for (const s of vSamples) {
+    if (fail) throw fail;
+    if (s.dts / s.timescale > limitSec + 1) break;
+    decoder.decode(new EncodedVideoChunk({ type: s.is_sync ? 'key' : 'delta', timestamp: s.cts * 1e6 / s.timescale,
+      duration: s.duration * 1e6 / s.timescale, data: s.data }));
+    while (decoder.decodeQueueSize > 6 || encoder.encodeQueueSize > 6) {
+      await sleep(2);
+      if (fail) throw fail;
+      if (Date.now() > deadline) throw new Error('slow');
+    }
+    if (Date.now() > deadline) throw new Error('slow');
+  }
+  await decoder.flush();
+  await encoder.flush();
+  if (fail) throw fail;
+  decoder.close(); encoder.close();
+  muxer.finalize();
+  return {
+    blob: new Blob([target.buffer], { type: 'video/mp4' }),
+    trimmed,
+    info: { srcW, srcH, W, H, rotation, fps, durSec: Math.round(durSec * 10) / 10, ms: Date.now() - t0, codec: enc.cfg.codec, mode: enc.cfg.bitrateMode || 'variable', frames: n }
+  };
+}
+`;
+let videoWorkerUrl = null;
+function compressVideo(it){
+  return new Promise(resolve => {
+    let w;
+    try {
+      videoWorkerUrl = videoWorkerUrl || URL.createObjectURL(new Blob([VIDEO_WORKER_SRC], { type: 'text/javascript' }));
+      w = new Worker(videoWorkerUrl);
+    } catch (_) { resolve(null); return; }
+    let done = false;
+    const finish = res => {
+      if (done) return; done = true; clearTimeout(hard);
+      try { w.terminate(); } catch (_) {}
+      it.vcancel = null;
+      resolve(res);
+    };
+    it.vcancel = () => finish({ error: 'cancelled' });   // удалили файл или оригинал дошёл раньше
+    const hard = setTimeout(() => finish({ error: 'timeout' }), 5 * 60 * 1000);
+    w.onmessage = e => {
+      const d = e.data;
+      if (d.progress != null) setTag(it, `Готовим видео… ${Math.round(d.progress * 100)}%`);
+      else finish(d);
+    };
+    w.onerror = () => finish({ error: 'worker' });
+    w.postMessage({ file: it.file, libs: VIDEO_LIBS, codecs: VIDEO_CODECS, maxSide: 1280, bitrate: 2000000, maxFps: 30, maxSec: CONFIG.maxVideoSec });
+  });
+}
+
+// длительность — из метаданных превью (быстро, без разбора файла); 0 — не узнали
+function videoDuration(it){
+  const v = it.vel;
+  if (!v) return Promise.resolve(0);
+  if (v.readyState >= 1 && isFinite(v.duration)) return Promise.resolve(v.duration);
+  return new Promise(res => {
+    const t = setTimeout(() => res(0), 3000);
+    v.addEventListener('loadedmetadata', () => { clearTimeout(t); res(isFinite(v.duration) ? v.duration : 0); }, { once: true });
+    v.addEventListener('error', () => { clearTimeout(t); res(0); }, { once: true });
+  });
+}
+
+async function prepVideo(it){
+  const t0 = performance.now();
+  const canC = canCompressVideo();
+  const dur = canC ? await videoDuration(it) : 0;
+  if (it.status === 'removed') return;
+  const longOrBig = dur > CONFIG.maxVideoSec + 0.5 || it.file.size > CONFIG.maxVideoMB * MB;
+  // гонка — только когда есть быстрый сервер (иначе всё равно ждём номера, и меньший файл выгоднее)
+  const race = canC && !longOrBig && WORKER && !workerDead;
+  if (race) {
+    it.blob = it.file; it.size = it.file.size; it.racing = true; it.variant = 'оригинал';
+    dbg(`видео ${it.part}: гонка — оригинал ${(it.file.size / MB).toFixed(1)} МБ грузится, параллельно сжимаем`);
+    setStatus(it, 'ready');
+  }
+  let r = null;
+  if (canC) {
+    setTag(it, 'Готовим видео… 0%');
+    it.compressP = compressVideo(it);
+    r = await it.compressP;
+    it.compressP = null;
+    if (it.status === 'removed') return;
+  }
+  const sec = ((performance.now() - t0) / 1000).toFixed(1);
+  // выигрыш меньше 20% — шлём оригинал; но ролик длиннее минуты всё равно обрезаем до 60 с
+  const good = !!(r && r.blob && (r.blob.size < it.file.size * 0.8 || (r.trimmed && r.blob.size < it.file.size)));
+  if (r && !good && r.error !== 'cancelled') {
+    dbg(`видео ${it.part}: сжатие не помогло (${r.error ? r.error : r.blob ? 'выигрыш < 20%' : 'нет'}) — оригинал, ${sec} с`);
+  }
+  if (race) {
+    it.racing = false;
+    if (good) raceDecide(it, r, sec);
+    else if (r && r.error === 'cancelled') dbg(`видео ${it.part}: гонка — оригинал дошёл раньше, чем закончилось сжатие (${sec} с)`);
+    setTag(it, it.trimmed ? 'видео · 60 с' : 'видео');
+    updateHint('');
+    return;
+  }
+  let blob = it.file;
+  if (good) {
+    blob = r.blob;
+    it.trimmed = r.trimmed;
+    it.variant = 'сжатое';
+    it.name = (it.name || 'video').replace(/\.\w+$/, '') + '.mp4';
+    dbg(`видео ${it.part}: ${(it.file.size / MB).toFixed(1)} МБ → ${(blob.size / MB).toFixed(1)} МБ за ${sec} с`, r.info);
+  } else it.variant = 'оригинал';
+  it.blob = blob; it.size = blob.size;
+  if (it.size > videoLimit() * MB) { setTag(it, 'большое', true); setStatus(it, 'big'); updateHint(''); return; }
+  setTag(it, it.trimmed ? 'видео · 60 с' : 'видео');
+  updateHint('');
+  setStatus(it, 'ready');
+}
+
+// сжатие готово, а оригинал уже в пути: что дойдёт раньше?
+function raceDecide(it, r, sec){
+  const comp = r.blob;
+  const info = `${(it.file.size / MB).toFixed(1)} МБ → ${(comp.size / MB).toFixed(1)} МБ за ${sec} с`;
+  const useComp = () => {
+    it.blob = comp; it.size = comp.size; it.trimmed = r.trimmed; it.variant = 'сжатое'; it.loaded = 0;
+    it.name = (it.name || 'video').replace(/\.\w+$/, '') + '.mp4';
+  };
+  const st = it.status;
+  if (st === 'staged' || st === 'committed' || st === 'delivered') {
+    dbg(`видео ${it.part}: гонка — оригинал уже доставлен, сжатое (${info}) не понадобилось`);
+    return;
+  }
+  if (st === 'uploading' && it.phase === 'pre' && it.abort) {
+    const el = (performance.now() - it.upT0) / 1000;
+    const own = el > 2 && it.loaded > 0 ? it.loaded * it.file.size / el : 0;   // скорость этой загрузки
+    const speed = own || up.speed;
+    const tOrig = speed ? (1 - it.loaded) * it.file.size / speed : Infinity;
+    const tComp = speed ? comp.size / speed + 1 : 0;                            // +1 с на новый запрос
+    if (!r.trimmed && tOrig <= tComp) {
+      dbg(`видео ${it.part}: гонка — оставляем оригинал: осталось ~${tOrig.toFixed(0)} с, сжатому нужно ~${tComp.toFixed(0)} с (${info})`);
+      return;
+    }
+    dbg(`видео ${it.part}: гонка — переключаемся на сжатое: оригиналу осталось ~${isFinite(tOrig) ? tOrig.toFixed(0) : '?'} с, сжатому ~${tComp.toFixed(0)} с (${info})`, r.info);
+    useComp();
+    it.swap = true;
+    it.abort();                                   // preupload увидит swap и поставит сжатое в очередь
+    return;
+  }
+  if (st === 'ready' || st === 'failed') {        // ещё не начинал грузиться или не получилось — берём меньший
+    useComp();
+    dbg(`видео ${it.part}: гонка — оригинал ещё не ушёл, берём сжатое (${info})`, r.info);
+    if (ticket) paintUpl();
+    pump();
+  }
+  // грузится после номера (запасной путь) — не трогаем
+}
+
+// ================= 12. СЕТЬ =================
+// Google: только text/plain — иначе браузер шлёт preflight, на который Apps Script не отвечает.
+// keepalive — заявка дойдёт, даже если вкладку закрыли (до 64 КБ).
+async function gsPost(body, timeout){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: 'POST', body, signal: ctrl.signal, keepalive: body.length < 60000,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+    const r = await res.json();
+    if (!r || !r.ok) throw r || {};
+    return r;
+  } finally { clearTimeout(t); }
+}
+async function postJson(url, timeout = 15000){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeout);
+  try { return await (await fetch(url, { method: 'POST', signal: ctrl.signal })).json(); }
+  finally { clearTimeout(t); }
+}
+
+// Загрузка файла в Worker: настоящий прогресс; 20 с без движения — прервать. Можно отменить.
+function xhrUpload(url, body, type, onProgress){
+  const x = new XMLHttpRequest();
+  const promise = new Promise((resolve, reject) => {
+    let last = Date.now(), limit = 20000, uploaded = false, finished = false;
+    const watch = setInterval(() => { if (Date.now() - last > limit) x.abort(); }, 1000);
+    const end = fn => () => { if (finished) return; finished = true; clearInterval(watch); fn(); };
+    x.open('POST', url);
+    if (type) x.setRequestHeader('Content-Type', type);
+    x.timeout = 10 * 60 * 1000;                                   // верхняя граница
+    x.upload.onprogress = ev => { last = Date.now(); if (ev.lengthComputable && onProgress) onProgress(ev.loaded / ev.total); };
+    x.upload.onload = () => { uploaded = true; last = Date.now(); limit = 90000; };   // всё ушло — ждём Telegram
+    x.onload = end(() => {
+      let r = null;
+      try { r = JSON.parse(x.responseText); } catch (_) {}
+      r ? resolve(r) : reject({ net: true, uploaded });
+    });
+    x.onerror = x.ontimeout = x.onabort = end(() => reject({ net: true, uploaded }));
+    x.send(body);
+  });
+  return { promise, abort: () => x.abort() };
+}
+
+// ================= 13. ПРЕДЗАГРУЗКА (пока клиент заполняет форму) =================
+// Черновой ключ выдаёт Worker при открытии формы; файлы уходят в служебную группу как file_id.
+function ensureDraft(){
+  if (!WORKER || workerDead || att.draft) return Promise.resolve(att.draft);
+  if (att.draftP) return att.draftP;
+  att.draftP = postJson(`${WORKER}/draft`, 8000)
+    .then(r => {
+      if (!r.ok) { dbg('черновик не выдан: ' + r.error + ' — файлы пойдут после номера'); return null; }
+      att.draft = { id: r.draft, token: r.token };
+      dbg('черновик ' + r.draft);
+      pump();
+      return att.draft;
+    })
+    .catch(() => { workerDead = true; wakeAll(); dbg('Worker недоступен — файлы пойдут через Google'); return null; })
+    .finally(() => { att.draftP = null; });
+  return att.draftP;
+}
+
+function pump(){
+  if (up.paused || !att.draft || workerDead) return;
+  const ready = live().filter(it => it.status === 'ready' && !it.noPre)
+    .sort((a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || a.order - b.order);
+  for (const it of ready) {
+    if (up.running.size >= up.max) break;
+    preupload(it);
+  }
+}
+
+async function preupload(it){
+  up.running.add(it);
+  it.status = 'uploading'; it.loaded = 0; it.path = 'предзагрузка'; it.phase = 'pre';
+  const t0 = it.upT0 = performance.now();
+  const blob = it.blob;
+  const url = `${WORKER}/pre?token=${encodeURIComponent(att.draft.token)}&part=${it.part}&kind=${KIND_NAME[it.kind]}&name=${encodeURIComponent(it.name || 'file')}`;
+  const type = blob.type || (it.kind === 'img' ? 'image/jpeg' : it.kind === 'vid' ? 'video/mp4' : 'audio/mp4');
+  let res = null, err = null;
+  try {
+    let x = xhrUpload(url, blob, type, f => { it.loaded = f; if (ticket) paintUpl(); });
+    it.abort = x.abort;
+    res = await x.promise;
+    if (!res.ok && res.fallback === 'document') {
+      x = xhrUpload(url + '&as=document', blob, type, f => { it.loaded = f; if (ticket) paintUpl(); });
+      it.abort = x.abort;
+      res = await x.promise;
+    }
+  } catch (e) { err = e; }
+  up.running.delete(it);
+  it.abort = null; it.phase = '';
+  if (it.status === 'removed') { pump(); return; }
+  if (it.swap) {                                      // гонка: сжатое оказалось быстрее — грузим его
+    it.swap = false; it.requeue = false; it.loaded = 0;
+    setStatus(it, 'ready');
+    return;
+  }
+  if (it.requeue) {                                   // уступили канал тексту заявки — начнём заново
+    it.requeue = false; it.loaded = 0;
+    setStatus(it, 'ready');
+    return;
+  }
+  const sec = (performance.now() - t0) / 1000;
+  if (res && res.ok) {
+    it.loaded = 1;
+    if (blob.size > 512 * 1024) up.speed = up.speed ? up.speed * 0.5 + blob.size / sec * 0.5 : blob.size / sec;
+    dbg(`предзагрузка ${KIND_NAME[it.kind]} ${it.part}${it.kind === 'vid' ? ' (' + (it.variant || '') + ')' : ''}: ${(blob.size / MB).toFixed(2)} МБ за ${sec.toFixed(1)} с (${(blob.size / MB / sec).toFixed(2)} МБ/с)`);
+    if (it.vcancel) it.vcancel();                     // гонка: оригинал дошёл — сжатие больше не нужно
+    setStatus(it, 'staged');
+    return;
+  }
+  dbg(`предзагрузка ${KIND_NAME[it.kind]} ${it.part} не удалась: ${res ? res.error : 'сеть'}`);
+  if (err && err.net && !(await workerAlive())) { workerDead = true; wakeAll(); }
+  setStatus(it, 'failed');                            // доставим после номера запасным путём
+}
+async function workerAlive(){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  try { return (await fetch(WORKER, { signal: ctrl.signal })).ok; } catch (_) { return false; }
+  finally { clearTimeout(t); }
+}
+
+// ================= 14. ЧЕРНОВИК ЗАЯВКИ (пока сервер не подтвердил) =================
+const PKEY = 'moika_pending';
+function savePending(job){
+  try { localStorage.setItem(PKEY, JSON.stringify({ payload: job.payload, ts: Date.now(), hadFiles: job.hadFiles })); } catch (_) {}
+}
+function loadPending(){
+  try {
+    const p = JSON.parse(localStorage.getItem(PKEY) || 'null');
+    if (p && p.payload && Date.now() - p.ts < 3 * 86400e3) return p;
+    localStorage.removeItem(PKEY);
+  } catch (_) {}
+  return null;
+}
+function clearPending(){ try { localStorage.removeItem(PKEY); } catch (_) {} }
+
+// ================= 15. ОТПРАВКА ЗАЯВКИ =================
+let guard = false;               // предупреждение при закрытии вкладки — сразу после нажатия
+window.addEventListener('beforeunload', e => { if (guard) { e.preventDefault(); e.returnValue = ''; } });
+
+let busy = false;
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  if (busy) return;                                       // двойное нажатие
+  const tClick = performance.now();
+
+  // проверка — синхронно
+  const c = state.cat;
+  const recording = isRecording();
+  const bad = [];
+  if (!c) bad.push(['e-cat', 'catList']);
+  if (c === 'money') {
+    const m = moneyData();
+    if (!m.method) bad.push(['e-money', 'payChips', 'Выберите, чем платили']);
+    else if (!(m.total > 0)) bad.push(['e-money', m.method === 'coins' ? 'coinRows' : 'noteRows', 'Укажите, сколько не зачислилось']);
+  }
+  if (isProgram(c) && CAT[c].progRequired && !programs().length) bad.push(['e-prog', 'progs']);
+  if (c === 'other' && !$('comment').value.trim() && !voice && !recording) bad.push(['e-other', 'comment']);
+  if (!phoneValid($('phone').value)) bad.push(['e-phone', 'phone']);
+  ['e-cat', 'e-money', 'e-prog', 'e-other', 'e-phone'].forEach(id => {
+    const b = bad.find(x => x[0] === id);
+    showErr(id, !!b, b && b[2]);
+  });
+  if (bad.length) {
+    const first = $(bad[0][1]);
+    const focusEl = first.matches('input, textarea, button') ? first : first.querySelector('input:not([disabled]), button:not([disabled])') || first;
+    focusEl.focus({ preventScroll: true });
+    first.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    return;
+  }
+
+  // интерфейс меняется в том же кадре, до любых ожиданий
+  busy = true;
+  const btn = $('submit');
+  btn.disabled = true; btn.textContent = 'Отправляем…';
+  const job = buildJob(recording);
+  savePending(job);
+  runJob(job, tClick);                                    // запрос уходит синхронно внутри
+});
+
+function buildJob(recording){
+  const c = state.cat;
+  if (c === 'money') {                                   // в «деньгах» вложений нет: выбранное раньше — убираем
+    live().forEach(it => removeItem(it.id));
+    if (voice) deleteVoice();
+    recording = false;
+  }
+  const items = live();
+  const m = c === 'money' ? moneyData() : { method: '', money: null, total: 0 };
+  const payload = {
+    action: 'create', clientId: failedCid || uid(), retry: !!failedCid, post, category: c,
+    programs: isProgram(c) ? programs() : [],
+    payMethod: m.method, money: m.money, total: m.total,
+    selfhelpTried: !!CAT[c].selfhelp && state.selfhelpTried,
+    comment: c === 'money' ? '' : $('comment').value.trim(),
+    phone: '+' + phoneDigits($('phone').value), contact: chosen('contact') || 'Звонок',
+    photos: items.filter(x => x.kind === 'img' && x.status !== 'lost').length,
+    videos: items.filter(x => x.kind === 'vid' && x.status !== 'big').length,
+    skipped: items.filter(x => x.kind === 'vid' && x.status === 'big').length,
+    voice: !!voice || recording,
+    draftId: att.draft ? att.draft.id : '',
+    website: $('website').value
+  };
+  // если идёт запись — останавливаем, голосовое приложим после получения номера
+  const voiceP = recording ? stopRecording() : Promise.resolve(voice);
+  return { payload, voiceP, hadFiles: items.length > 0 || payload.voice };
+}
+
+function setDone(stage, job, id){
+  const ico = $('doneIco'), title = $('doneTitle'), txt = $('doneText');
+  $('retryBtn').hidden = stage !== 'fail';
+  if (stage === 'sending' || stage === 'slow') {
+    ico.hidden = false; ico.className = 'okc wait';
+    title.textContent = 'Отправляем заявку…';
+    txt.textContent = stage === 'slow'
+      ? 'Связь медленная — пожалуйста, не закрывайте страницу, заявка ещё отправляется.'
+      : 'Пожалуйста, не закрывайте страницу.';
+    $('numLbl').textContent = 'Номер заявки';
+    seg($('numSeg'), '----', '8888');
+    $('numSeg').setAttribute('aria-label', 'ещё нет');
+    ['doneNote', 'upl', 'attn', 'promoBox'].forEach(k => { $(k).hidden = true; });
+    if (stage === 'sending' && nav.view !== 'send') navTo('send');
+  } else if (stage === 'ok') {
+    const how = { 'Звонок':'позвоним', 'Viber':'напишем в Viber', 'WhatsApp':'напишем в WhatsApp' }[job.payload.contact] || 'свяжемся';
+    ico.hidden = false; ico.className = 'okc';
+    title.textContent = 'Заявка принята';
+    txt.innerHTML = `Проверим записи с камер и ${how} ${replyShort()} по номеру <b>${esc(formatPhone(job.payload.phone))}</b>.`;
+    const n = String(id);
+    const shown = /^\d+$/.test(n) ? n.padStart(4, '0') : n;
+    seg($('numSeg'), shown, shown.replace(/./g, '8'));
+    $('numSeg').setAttribute('aria-label', n);
+    $('attn').hidden = false;
+    $('promoBox').hidden = !/^\d+$/.test(n) || n === '0';
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}   // одна короткая вибрация — только после подтверждения
+  } else {
+    ico.hidden = true;
+    title.textContent = 'Заявка не отправилась';
+    $('numLbl').textContent = 'Ошибка';
+    seg($('numSeg'), 'Err', '888');
+    $('numSeg').setAttribute('aria-label', 'ошибка');
+    txt.innerHTML = 'Похоже, пропал интернет. Всё, что вы заполнили, сохранено — нажмите «Отправить ещё раз». Или ' +
+      (inHours() ? `<a href="tel:${esc(CONFIG.phone)}">позвоните нам</a>.` : `<a href="${esc(waHref())}" target="_blank" rel="noopener">напишите в WhatsApp</a>.`);
+    ['upl', 'attn', 'promoBox'].forEach(k => { $(k).hidden = true; });
+    retryJob = job;
+    title.focus({ preventScroll: true });
+  }
+}
+let retryJob = null;
+let failedCid = '';          // заявка не подтвердилась — повторная отправка из формы пойдёт с тем же clientId
+
+function showNote(id, why){
+  const text = {
+    big:    'Видео оказалось слишком большим для формы.',
+    failed: 'Не все файлы успели загрузиться.',
+    lost:   'Фото, видео и голосовое из прошлой попытки не сохранились.'
+  }[why];
+  $('doneNoteText').textContent = text + ` Отправьте их нам в Viber или WhatsApp и укажите номер заявки #${id}.`;
+  $('noteViber').href = viberHref;
+  $('noteWa').href = waHref(`Заявка #${id}`);
+  $('noteViber').hidden = !CONFIG.viber; $('noteWa').hidden = !CONFIG.whatsapp;
+  $('doneNote').hidden = false;
+}
+
+let running = false;
+async function runJob(job, tClick = performance.now()){
+  if (running) return;
+  running = true; guard = true;
+
+  // текст заявки — первым: новые предзагрузки ждут, мелкие текущие уступают канал
+  up.paused = true;
+  up.running.forEach(it => { if (it.blob && it.blob.size < 5 * MB && it.abort) { it.requeue = true; it.abort(); } });
+
+  // 1) запрос уходит сразу (без await перед fetch)
+  const attempt = (retry, timeout) => {
+    const body = JSON.stringify(Object.assign({}, job.payload, { retry: retry || job.payload.retry }));
+    const p = CONFIG.scriptUrl
+      ? gsPost(body, timeout)
+      : new Promise(res => setTimeout(() => res({ ok: true, id: 'ДЕМО', uploadKey: '', msgId: null }), 600));
+    dbg(`заявка: запрос ушёл через ${(performance.now() - tClick).toFixed(0)} мс после нажатия${retry ? ' (повтор)' : ''}`);
+    return p;
+  };
+  const pending = attempt(false, 15000);
+
+  // 2) экран отправки и «Связь медленная» через 8 с
+  setDone('sending', job);
+  const slowTimer = setTimeout(() => setDone('slow', job), 8000);
+
+  let r = null;
+  try { r = await pending; }
+  catch (e) {
+    if (!(e && ['empty', 'key', 'limit'].includes(e.error))) {
+      try { r = await attempt(true, 15000); } catch (_) { r = null; }     // тот же clientId — дубля не будет
+    }
+  }
+  clearTimeout(slowTimer);
+  busy = false;
+  const btn = $('submit'); btn.disabled = false; btn.textContent = 'Отправить заявку';
+  up.paused = false; pump();
+
+  if (!r || !r.id) {
+    running = false; guard = false;
+    failedCid = job.payload.clientId;
+    track('submit_fail');
+    setDone('fail', job);
+    dbg('заявка: ошибка отправки');
+    return;
+  }
+  dbg(`заявка: номер #${r.id} получен через ${(performance.now() - tClick).toFixed(0)} мс`);
+  clearPending();
+  track('submit_ok');
+  failedCid = '';
+  // заявка принята: записи формы в истории больше не действуют, «назад» — на главный
+  nav.submitted = true;
+  nav.gen++;
+  if (nav.view !== 'send') navTo('send');
+  try { history.replaceState({ v: 'send', i: nav.idx, g: nav.gen }, ''); } catch (_) {}
+  ticket = Object.assign({ cid: job.payload.clientId, tClick }, r);
+  setDone('ok', job, r.id);
+  requestAnimationFrame(() => dbg(`заявка: интерфейс обновлён через ${(performance.now() - tClick).toFixed(0)} мс`));
+  if (job.lostFiles) showNote(r.id, 'lost');
+
+  if (!job.lostFiles) await deliverAll(job);
+  running = false; guard = false;
+}
+
+// согласие на акции — отдельным запросом, только если клиент сам отметил
+let promoSent = null;
+function sendPromo(on){
+  if (!ticket || promoSent === on) return;
+  promoSent = on;
+  beacon({ action: 'promo', id: ticket.id, uploadKey: ticket.uploadKey || '', promo: on, clientId: ticket.cid });
+  $('promoMsg').textContent = on ? 'Готово — будем присылать акции.' : 'Хорошо, присылать не будем.';
+}
+$('promo').addEventListener('change', e => sendPromo(e.target.checked));
+
+// ================= 16. ДОСТАВКА ВЛОЖЕНИЙ ПОСЛЕ НОМЕРА =================
+let uplBase = null;          // что оставалось загрузить в момент получения номера
+function paintUpl(){
+  if (!uplBase) return;
+  const box = $('upl'), bar = $('uplBar'), fill = bar.querySelector('i'), txt = $('uplText');
+  let done = 0;
+  uplBase.forEach(it => {
+    if (['staged', 'committed', 'delivered', 'lost', 'big', 'removed'].includes(it.status)) done += it.size || 1;
+    else if (it.status === 'uploading') done += (it.size || 1) * (it.loaded || 0);
+  });
+  const total = uplBase.reduce((s, it) => s + (it.size || it.file && it.file.size || 1), 0) || 1;
+  const all = live().filter(it => it.status !== 'big');
+  const finished = all.filter(it => ['committed', 'delivered', 'lost'].includes(it.status)).length;
+  const pct = uplBase.length ? Math.max(3, Math.min(99, Math.round(done / total * 100))) : 99;
+  fill.style.width = pct + '%';
+  bar.setAttribute('aria-valuenow', String(pct));
+  txt.textContent = `Загружаем фото, видео и голосовое: ${finished} из ${all.length} — не закрывайте страницу.`;
+  box.hidden = false;
+}
+
+async function commitParts(list, withClaim){
+  if (!list.length && !withClaim) return true;
+  const parts = list.map(it => it.part);
+  let url = `${WORKER}/commit?token=${encodeURIComponent(att.draft.token)}&parts=${parts.join(',')}`;
+  if (withClaim) url += `&id=${ticket.id}&key=${encodeURIComponent(ticket.uploadKey || '')}&cid=${encodeURIComponent(ticket.cid)}&msg=${ticket.msgId || ''}`;
+  const t0 = performance.now();
+  let res = null;
+  try { res = await postJson(url); }
+  catch (_) { try { res = await postJson(url); } catch (_) { res = null; } }
+  if (res && res.ok !== undefined && withClaim && !['key', 'token'].includes(res.error)) claimed = true;
+  const ms = (performance.now() - t0).toFixed(0);
+  for (const it of list) {
+    if (res && res.sent && res.sent.includes(it.part)) {
+      it.path = 'предзагрузка';
+      dbg(`commit ${KIND_NAME[it.kind]} ${it.part}: ${ms} мс`);
+      setStatus(it, 'committed');
+    } else if (it.status === 'staged') {
+      setStatus(it, 'failed');                         // не переслалось — доставим заново запасным путём
+    }
+  }
+  return !!(res && res.ok);
+}
+
+// одно вложение до конца: дождаться готовности → переслать по file_id или доставить запасным путём
+async function settle(it){
+  for (;;) {
+    switch (it.status) {
+      case 'committed': case 'delivered': case 'removed': return true;
+      case 'big': case 'lost': return false;
+      case 'staged':
+        await commitParts([it], !claimed);
+        break;
+      case 'failed':
+        if (it.compressP) await it.compressP;                 // гонка: сжатое почти готово — оно меньше
+        return deliverDirect(it);
+      case 'ready':
+        if (!att.draft || workerDead || it.noPre) {
+          if (it.compressP) await it.compressP;
+          if (it.status !== 'ready') break;
+          return deliverDirect(it);
+        }
+        await changed(it);                                   // очередь сама его подхватит
+        break;
+      default:
+        await changed(it);                                   // prep, uploading
+    }
+  }
+}
+
+async function deliverAll(job){
+  await job.voiceP;                                        // если запись дописывалась — дождались
+  const items = live();
+  if (!items.length) return;
+  uplBase = items.filter(it => !['staged', 'committed'].includes(it.status));
+  paintUpl();
+  dbg(`после номера: предзагружено ${items.length - uplBase.length} из ${items.length}`);
+
+  if (att.draft && !workerDead) {
+    // голосовое и видео, которые уже в служебной группе, — сразу (заодно «Worker, вот номер заявки»)
+    const photos = items.filter(it => it.kind === 'img');
+    await commitParts(items.filter(it => it.kind !== 'img' && it.status === 'staged'), true);
+    // фото — одним альбомом: ждём, пока подготовятся все (не дольше 15 с)
+    const pending = () => photos.filter(it => ['prep', 'ready', 'uploading'].includes(it.status));
+    const until = Date.now() + 15000;
+    while (pending().length && Date.now() < until && att.draft && !workerDead) {
+      await Promise.race(pending().map(changed).concat(new Promise(r => setTimeout(r, 500))));
+    }
+    const ready = photos.filter(it => it.status === 'staged');
+    if (ready.length) await commitParts(ready, !claimed);
+  }
+  const results = await Promise.all(items.map(settle));
+  paintUpl();
+  const big = live().some(it => it.status === 'big');
+  const failed = results.some(r => !r) && live().some(it => it.status === 'lost');
+  const t = ((performance.now() - ticket.tClick) / 1000).toFixed(1);
+  dbg(`все вложения: ${failed ? 'не все доставлены' : 'доставлены'} через ${t} с после нажатия`);
+  if (DEBUG) console.table(live().map(it => ({
+    файл: `${KIND_NAME[it.kind]} ${it.part}`, исходный_МБ: +((it.file ? it.file.size : it.size) / MB).toFixed(2),
+    отправлено_МБ: +(it.size / MB).toFixed(2), вариант: it.variant || '', путь: it.path, статус: it.status })));
+  if (failed) { $('upl').hidden = true; showNote(ticket.id, 'failed'); return; }
+  if (big) showNote(ticket.id, 'big');
+  const box = $('upl'), bar = $('uplBar');
+  box.hidden = false; box.classList.add('fin');
+  bar.querySelector('i').style.width = '100%'; bar.setAttribute('aria-valuenow', '100');
+  $('uplText').textContent = 'Все вложения доставлены ✓';
+}
+
+// запасной путь: загрузка после номера — через Worker с ключом заявки, иначе через Google
+async function deliverDirect(it){
+  const r = ticket;
+  const kind = KIND_NAME[it.kind];
+  const t0 = performance.now();
+  it.loaded = 0;
+  const progress = f => { it.loaded = f; it.status = 'uploading'; paintUpl(); };
+  const auth = `id=${r.id}&key=${encodeURIComponent(r.uploadKey || '')}&cid=${encodeURIComponent(r.cid)}&msg=${r.msgId || ''}&part=${it.part}`;
+  const finish = (path, ok) => {
+    const sec = (performance.now() - t0) / 1000;
+    it.path = path;
+    dbg(`вложение ${kind} ${it.part}: ${ok ? path : 'НЕ ДОСТАВЛЕНО'}, ${(it.size / MB).toFixed(2)} МБ за ${sec.toFixed(1)} с`);
+    setStatus(it, ok ? 'delivered' : 'lost');
+    return ok;
+  };
+  if (!CONFIG.scriptUrl) { await new Promise(res => setTimeout(res, 300)); return finish('демо', true); }
+
+  if (WORKER && !workerDead && !it.noPre) {
+    const send = async () => {
+      if (it.kind === 'img') {
+        const fd = new FormData();
+        fd.append('f0', it.blob, it.name || 'photo.jpg');
+        return (await xhrUpload(`${WORKER}/album?${auth}`, fd, null, progress).promise).ok;
+      }
+      const url = `${WORKER}/file?${auth}&kind=${kind}&name=${encodeURIComponent(it.name || 'file')}`;
+      const type = it.blob.type || 'application/octet-stream';
+      let res = await xhrUpload(url, it.blob, type, progress).promise;
+      if (!res.ok && res.fallback === 'document') res = await xhrUpload(url + '&as=document', it.blob, type, progress).promise;
+      return res.ok;
+    };
+    try { if (await send()) return finish('после номера (Worker)', true); }
+    catch (_) {
+      // ответ мог потеряться, а файл — дойти: спросим, прежде чем слать заново
+      const sent = await askSent(auth);
+      if (sent === true) return finish('после номера (Worker)', true);
+      if (sent === null) { workerDead = true; wakeAll(); }
+      else { try { if (await send()) return finish('после номера (Worker)', true); } catch (_) {} }
+    }
+  }
+  // Google: запасной путь, прогресс примерный
+  if (it.kind === 'vid' && it.size > CONFIG.maxVideoMBSlow * MB) return finish('', false);
+  let f = 0;
+  const tick = setInterval(() => { f += (0.9 - f) * 0.06; progress(f); }, 200);
+  try {
+    const data = await readB64(it.blob);
+    const body = JSON.stringify({ action: 'files', id: r.id, uploadKey: r.uploadKey, clientId: r.cid, part: it.part, kind,
+      files: [{ name: it.name || 'file', mime: it.blob.type || 'application/octet-stream', data }] });
+    try { await gsPost(body, 300000); }
+    catch (e) { if (e && ['key', 'limit', 'empty'].includes(e.error)) throw e; await gsPost(body, 300000); }
+    return finish('Google', true);
+  } catch (_) { return finish('', false); }
+  finally { clearInterval(tick); }
+}
+async function askSent(auth){
+  for (let i = 0; i < 2; i++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    try { return (await (await fetch(`${WORKER}/sent?${auth}`, { signal: ctrl.signal })).json()).sent === true; }
+    catch (_) { if (i === 0) await new Promise(r => setTimeout(r, 2000)); }   // сеть моргнула — пауза и ещё раз
+    finally { clearTimeout(t); }
+  }
+  return null;
+}
+
+// ================= 17. ДЕЙСТВИЯ: одно делегирование кликов =================
+const actions = {
+  'help': () => {
+    if (nav.submitted) {
+      if (running) { navTo('send'); return; }            // вложения прошлой заявки ещё грузятся — показать прогресс
+      resetForm();
+    }
+    navTo('cats'); track('open_help'); ensureDraft();
+  },
+  'back': navBack,
+  'home': () => navBackTo('choice'),
+  'cat': el => selectCat(el.dataset.cat),
+  'sub': el => selectSub(el.dataset.cat),
+  'change-cat': () => navBackTo('cats'),
+  'change-sub': () => navBackTo('sub'),
+  'cnt': el => {
+    const row = el.closest('.cnt'), kind = row.dataset.kind, v = +row.dataset.v;
+    cnt[kind][v] = Math.max(0, Math.min(CONFIG.maxCount, cnt[kind][v] + Number(el.dataset.d)));
+    paintCounter(row);
+    paintMoney();
+    if (el.disabled) (el.classList.contains('minus') ? row.querySelector('.plus') : row.querySelector('.minus')).focus();
+  },
+  'other-note': el => {
+    const on = el.getAttribute('aria-pressed') !== 'true';
+    el.setAttribute('aria-pressed', String(on));
+    $('otherNoteBox').hidden = !on;
+    if (on) $('otherNote').focus();
+    paintMoney();
+  },
+  'sh-ok': () => { track('selfhelp_ok'); navTo('ok'); },
+  'sh-fail': () => { track('selfhelp_fail'); state.selfhelpTried = true; navTo('form'); },
+  'stuck': el => {
+    if ($('stuck').dataset.sent) return;               // одно нажатие
+    $('stuck').dataset.sent = '1';
+    el.setAttribute('aria-pressed', 'true');
+    $('stuck').querySelectorAll('button').forEach(b => { if (b !== el) b.disabled = true; });
+    track('button_stuck', { program: +el.dataset.n });
+    $('stuckMsg').textContent = 'Спасибо, передали технику.';
+  },
+  'mic': startRecording,
+  'rec-stop': stopRecording,
+  'voice-del': deleteVoice,
+  'add-file': () => $('fileInput').click(),
+  'remove-file': el => removeItem(el.closest('.thumb').dataset.id),
+  'retry': () => { if (retryJob) { retryJob.payload.retry = true; runJob(retryJob); } },
+  'pend-send': () => {
+    const p = loadPending();
+    $('pendBox').hidden = true;
+    if (!p) return;
+    const payload = Object.assign({}, p.payload, { retry: true });
+    if (p.hadFiles) Object.assign(payload, { photos: 0, videos: 0, voice: false, skipped: 0 });
+    runJob({ payload, voiceP: Promise.resolve(null), hadFiles: p.hadFiles, lostFiles: p.hadFiles });
+  },
+  'pend-drop': () => { clearPending(); $('pendBox').hidden = true; }
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && actions[el.dataset.act]) { actions[el.dataset.act](el); return; }
+  // статистика по ссылкам
+  const a = e.target.closest('a');
+  if (!a) return;
+  const h = a.getAttribute('href') || '';
+  if (a.id === 'lnkYandex') track('click_yandex');
+  else if (a.id === 'lnkGoogle') track('click_google');
+  else if (h.startsWith('tel:')) track('click_call');
+  else if (h.startsWith('viber:')) track('click_viber');
+  else if (h.includes('wa.me/')) track('click_whatsapp');
+});
+
+// новая заявка после принятой: форма с чистого листа (телефон и способ связи остаются)
+function resetForm(){
+  nav.submitted = false;
+  Object.assign(state, { cat: '', selfhelpTried: false, shownSelfhelp: false });
+  form.querySelectorAll('input[name="prog"], input[name="pay"]').forEach(i => { i.checked = false; });
+  Object.values(cnt).forEach(k => Object.keys(k).forEach(v => { k[v] = 0; }));
+  form.querySelectorAll('.cnt').forEach(paintCounter);
+  $('otherNoteBtn').setAttribute('aria-pressed', 'false'); $('otherNoteBox').hidden = true;
+  $('otherNote').value = ''; $('comment').value = '';
+  paintMoney();
+  att.items.forEach(it => { if (it.url) URL.revokeObjectURL(it.url); });
+  Object.assign(att, { draft: null, draftP: null, items: new Map(), next: { img: 1, vid: 100, voice: 200 }, order: 0 });
+  $('files').innerHTML = '';
+  if (voice) URL.revokeObjectURL(voice.url);
+  voice = null; $('vaudio').removeAttribute('src'); $('vprev').hidden = true; $('micBtn').hidden = !canRecord;
+  ticket = null; claimed = false; uplBase = null; promoSent = null; retryJob = null;
+  $('promo').checked = false; $('promoMsg').textContent = ''; $('upl').classList.remove('fin'); $('doneNote').hidden = true;
+  ['e-cat', 'e-money', 'e-prog', 'e-other', 'e-phone'].forEach(id => showErr(id, false));
+  paintPair(); updateHint('');
+}
+
+// ================= 18. ВЕРНУЛИСЬ С НЕПОДТВЕРЖДЁННОЙ ЗАЯВКОЙ =================
+{
+  const p = loadPending();
+  if (p) {
+    // запрос с keepalive мог дойти — повтор безопасен: сервер узнает заявку по clientId
+    $('pendText').textContent = `Заявка от ${fmt(new Date(p.ts))}. Отправить её ещё раз? Если она уже дошла, второй не будет.` +
+      (p.hadFiles ? ' Фото, видео и голосовое не сохранились — их можно будет прислать в Viber или WhatsApp.' : '');
+    $('pendBox').hidden = false;
+  }
+}
+dbg('страница готова');
+</script>
+</body>
+</html>
