@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- масштаб зафиксирован: форма не увеличивается от касаний и не «уплывает» -->
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#232528">
 <meta name="robots" content="noindex">
@@ -44,7 +45,7 @@
   *{touch-action:manipulation!important}
   /* быстрые нажатия не выделяют текст и не вызывают меню */
   button,.key,.chip,.pm,.cnt,label{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* !important: у кнопок стоит all:unset, он сбрасывает и это свойство */
-  html{background:var(--metal-lo)}
+  html{background:var(--metal-lo);-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
     color:var(--text);font:600 15px/1.45 var(--sys)}
   .wrap{max-width:480px;margin:0 auto;padding:12px}
