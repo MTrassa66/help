@@ -535,7 +535,7 @@ async function claimRoute(req, env, ctx) {
   if (r.error === 'limit') return { ok: false, error: 'limit' };   // в Google не уходим: там тоже лимит
   if (r.error) return { ok: false, error: r.error };                // страница уйдёт в Google
   ctx.waitUntil(D.process(r.id));                                   // Telegram и таблица — после ответа
-  return { ok: true, id: r.id, uploadKey: r.uploadKey, msgId: r.msgId || null, repeat: r.repeat || undefined };
+  return { ok: true, id: r.id, uploadKey: r.uploadKey, msgId: r.msgId || null, repeat: r.repeat || undefined, first: r.first || undefined };
 }
 
 // событие статистики: тело читаем сразу (после ответа оно уже недоступно), в Google — после ответа
@@ -544,7 +544,7 @@ async function eventRoute(req, env, ctx) {
   try { body = await req.text(); } catch (_) {}
   let action = '';
   try { action = JSON.parse(body).action; } catch (_) {}
-  if ((action === 'event' || action === 'promo') && body.length < 4096 && env.GAS_URL) {
+  if ((action === 'event' || action === 'promo' || action === 'plate') && body.length < 4096 && env.GAS_URL) {
     ctx.waitUntil(fetch(env.GAS_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, signal: AbortSignal.timeout(30e3) }).catch(() => {}));
   }
   return new Response(null, { status: 204, headers: CORS });
@@ -632,6 +632,14 @@ function cleanTicket(d) {
   };
 }
 
+// кнопка под сообщением о заявке: написать клиенту в WhatsApp с готовым началом (Viber так не умеет)
+const WA_HELLO = id => 'Здравствуйте! Это мойка на Минской 10А, по вашей заявке #' + id + '.';
+function waButton(id, phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length < 10) return undefined;
+  return { inline_keyboard: [[{ text: '💬 WhatsApp клиенту', url: 'https://wa.me/' + digits + '?text=' + encodeURIComponent(WA_HELLO(id)) }]] };
+}
+
 function ticketText(id, d) {
   const make = comment => {
     const L = ['🔴 <b>Заявка #' + id + '</b>' + (d.post ? ' / Пост ' + escH(d.post) : '')];
@@ -671,6 +679,7 @@ function ticketText(id, d) {
 const DAY = 86400e3;
 const TG_WINDOW = DAY, GS_WINDOW = 7 * DAY;
 const FB_FIRST = 9001, FB_LAST = 9999;
+const FIRST_WINDOW = 3 * 3600e3;    // «первым сообщили»: такой же проблемы на этом посту не было 3 часа
 const backoff = n => [15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 1800e3][Math.max(0, n)] || 3600e3;
 
 export class TicketDesk extends DurableObject {
@@ -684,9 +693,11 @@ export class TicketDesk extends DurableObject {
         tbusy INTEGER DEFAULT 0, gbusy INTEGER DEFAULT 0, next_at INTEGER DEFAULT 0, ts INTEGER,
         warned INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS hits(k TEXT NOT NULL, ts INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS recent(post TEXT, cat TEXT, ts INTEGER);
       CREATE INDEX IF NOT EXISTS hits_k ON hits(k, ts);`);
     // счётчик, созданный до этой версии: досоздаём колонку предупреждения
     try { this.sql.exec('ALTER TABLE jobs ADD COLUMN warned INTEGER DEFAULT 0'); } catch (_) {}
+    try { this.sql.exec('ALTER TABLE claims ADD COLUMN first INTEGER DEFAULT 0'); } catch (_) {}
   }
   one(q, ...a) { return this.sql.exec(q, ...a).toArray()[0] || null; }
   last() { const r = this.one("SELECT v FROM meta WHERE k='last'"); return r ? Number(r.v) : 0; }
@@ -724,7 +735,11 @@ export class TicketDesk extends DurableObject {
     // повтор той же заявки лимитом не считается
     if (!this.one('SELECT 1 AS x FROM claims WHERE cid = ?', cid) && this.limited(limits)) return { error: 'limit' };
     const t = this.take(cid);
-    if (!t.repeat) this.sql.exec('INSERT OR IGNORE INTO jobs(id, cid, body, ts) VALUES(?, ?, ?, ?)', t.id, cid, JSON.stringify(payload), Date.now());
+    if (!t.repeat) {
+      this.sql.exec('INSERT OR IGNORE INTO jobs(id, cid, body, ts) VALUES(?, ?, ?, ?)', t.id, cid, JSON.stringify(payload), Date.now());
+      if (this.isFirst(payload)) this.sql.exec('UPDATE claims SET first = 1 WHERE cid = ?', cid);
+    }
+    const first = !!(this.one('SELECT first FROM claims WHERE cid = ?', cid) || {}).first;
     let ukey = t.ukey;
     if (!ukey) {
       ukey = await makeKey(this.env, t.id);
@@ -733,7 +748,17 @@ export class TicketDesk extends DurableObject {
     }
     const j = this.one('SELECT msg FROM jobs WHERE id = ?', t.id);
     if (!t.repeat) await this.arm(Date.now() + 20e3);                 // страховка: если фоновая отправка оборвётся
-    return { id: t.id, uploadKey: ukey, msgId: j && j.msg, repeat: t.repeat };
+    return { id: t.id, uploadKey: ukey, msgId: j && j.msg, repeat: t.repeat, first };
+  }
+
+  // «Вы первым сообщили»: по этому посту и этой проблеме за последние FIRST_WINDOW заявок не было
+  isFirst(payload) {
+    const t = cleanTicket(payload);
+    if (!t.post || !t.category) return false;
+    const now = Date.now();
+    const seen = this.one('SELECT 1 AS x FROM recent WHERE post = ? AND cat = ? AND ts > ?', t.post, t.category, now - FIRST_WINDOW);
+    this.sql.exec('INSERT INTO recent(post, cat, ts) VALUES(?, ?, ?)', t.post, t.category, now);
+    return !seen;
   }
 
   // для Google: номер из общего счётчика; заявку Google ведёт сам (Telegram и таблица — на его стороне)
@@ -772,7 +797,9 @@ export class TicketDesk extends DurableObject {
       this.sql.exec('UPDATE jobs SET tbusy = ? WHERE id = ?', now, id);
       let msg = 0;
       try {
-        const r = await tg(this.env, 'sendMessage', { chat_id: this.env.CHAT_ID, parse_mode: 'HTML', disable_web_page_preview: true, text: ticketText(id, cleanTicket(d)) });
+        const t = cleanTicket(d);
+        const r = await tg(this.env, 'sendMessage', { chat_id: this.env.CHAT_ID, parse_mode: 'HTML', disable_web_page_preview: true,
+          text: ticketText(id, t), reply_markup: waButton(id, t.phone) });
         if (r.ok) msg = r.result.message_id;
       } catch (_) {}
       // строка в таблице уже есть без номера сообщения — отправим её ещё раз (Google обновит отметку)
@@ -838,6 +865,7 @@ export class TicketDesk extends DurableObject {
     this.sql.exec('DELETE FROM claims WHERE ts < ?', now - 7 * DAY);
     this.sql.exec('DELETE FROM jobs WHERE ts < ? AND ((tg = 1 AND gs = 1) OR ts < ?)', now - 7 * DAY, now - 8 * DAY);
     this.sql.exec('DELETE FROM hits WHERE ts < ?', now - 2 * 3600e3);
+    this.sql.exec('DELETE FROM recent WHERE ts < ?', now - DAY);
     const t = Date.now();
     const nxt = this.one('SELECT MIN(next_at) AS t FROM jobs WHERE ' + this.pending(t));
     if (nxt && nxt.t) await this.ctx.storage.setAlarm(Math.max(nxt.t, Date.now() + 5e3));
