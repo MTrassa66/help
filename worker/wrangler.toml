@@ -1,0 +1,24 @@
+# Настройки Cloudflare Worker мойки (v6). Секретов здесь нет и быть не должно:
+# BOT_TOKEN и SIGN_KEY хранятся в Cloudflare (Settings → Variables and Secrets).
+name = "mtrassa"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+# переменные, заданные в панели Cloudflare (CHAT_ID, STAGING_CHAT_ID, GAS_URL…), при выкладке не стираются
+keep_vars = true
+
+# хранилище moika-dedupe: ID — Cloudflare → Storage & Databases → KV → moika-dedupe
+kv_namespaces = [
+  { binding = "DEDUPE", id = "ВСТАВЬТЕ_ID_KV" }
+]
+
+# счётчик номеров и очередь «Telegram + таблица»
+[[durable_objects.bindings]]
+name = "DESK"
+class_name = "TicketDesk"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TicketDesk"]
+
+[triggers]
+crons = ["0 3 * * *"]

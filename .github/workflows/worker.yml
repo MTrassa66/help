@@ -1,0 +1,20 @@
+# Запасной способ выложить Worker (основной — Cloudflare Workers Builds, см. инструкцию).
+# Запускается только вручную: GitHub → Actions → «Выложить Worker» → Run workflow.
+# Нужны секреты репозитория (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — токен Cloudflare с правом «Edit Cloudflare Workers»
+#   CLOUDFLARE_ACCOUNT_ID — ID аккаунта Cloudflare (не секрет, но хранится там же)
+# В самом репозитории секретов нет.
+name: Выложить Worker
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy
