@@ -2129,12 +2129,13 @@ async function runJob(job, tClick = performance.now()){
   setDone('sending', job);
   const slowTimer = setTimeout(() => setDone('slow', job), 8000);
 
-  let r = null;
+  let r = null, limit = false;
   for (let n = 0; n < plan.length && !r; n++) {
     try { r = await (n === 0 ? first : attempt(n)); }
     catch (e) {
       dbg(`заявка: ${via} не ответил${e && e.error ? ' (' + e.error + ')' : ''}`);
       if (e && e.error === 'empty') break;                       // данные не прошли проверку — повтор не поможет
+      if (e && e.error === 'limit') { limit = true; break; }     // слишком много заявок за час — повтор не поможет
     }
   }
   clearTimeout(slowTimer);
@@ -2148,6 +2149,13 @@ async function runJob(job, tClick = performance.now()){
     failedCid = job.payload.clientId;
     track('submit_fail');
     setDone('fail', job);
+    if (limit) {
+      $('doneTitle').textContent = 'Слишком много заявок';
+      $('doneText').innerHTML = 'С этого номера за последний час уже отправлено несколько заявок. ' +
+        (inHours() ? `<a href="tel:${esc(CONFIG.phone)}">Позвоните нам</a>` : `<a href="${esc(waHref())}" target="_blank" rel="noopener">Напишите в WhatsApp</a>`) +
+        ' — так будет быстрее.';
+      $('retryBtn').hidden = true;
+    }
     dbg('заявка: ошибка отправки');
     return;
   }

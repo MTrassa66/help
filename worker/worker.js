@@ -19,6 +19,7 @@
 //   SIGN_KEY         (Secret) — значение SIGN_KEY из журнала функции setup() в Google
 //   GAS_URL                   — адрес веб-приложения Google (…/exec): туда уходят строки таблицы и события
 //   DRAFTS_PER_HOUR           — необязательно: черновиков с одного IP в час (по умолчанию 5)
+//   CLAIMS_PER_IP, CLAIMS_PER_PHONE — необязательно: заявок в час с одного IP (20) и на один телефон (3)
 //   DEDUPE  (KV)              — черновики, защита от дублей вложений, лимиты
 //   DESK    (Durable Object)  — счётчик номеров и очередь «Telegram + таблица»
 //   Cron 0 3 * * *            — раз в сутки удаляет старые сообщения служебной группы
@@ -43,6 +44,9 @@ const DRAFT_TTL = 7200;            // черновик живёт 2 часа
 const DEDUPE_TTL = 21600;          // 6 часов
 const STAGING_KEEP = 40 * 3600;    // служебные сообщения: удалять в окне 3–40 ч (Telegram разрешает до 48 ч)
 const DRAFTS_PER_HOUR = 5;         // черновиков с одного IP в час
+// заявок в час: по IP — щедро (у мобильных операторов много абонентов за одним адресом), по телефону — строго
+const CLAIMS_PER_IP = 20;
+const CLAIMS_PER_PHONE = 3;
 const DRAFT_MAX_BYTES = 100 * MB;  // всего на один черновик
 // номера частей: фото 1–30, видео 100–109, голос 200–209 (одинаковы для всех путей — так работает защита от дублей)
 const KINDS = {
@@ -142,11 +146,16 @@ const claimKey = draft => 'dr:' + draft + ':claim';
 function api(env, method) {
   return (env.TG_API || 'https://api.telegram.org') + '/bot' + env.BOT_TOKEN + '/' + method;
 }
+// Ограничение времени: зависший запрос к Telegram не должен держать очередь заявок.
+// Текст — 15 с, файл — 120 с. По истечении — { ok: false, timeout: true }.
 async function tg(env, method, body) {
-  const opts = body instanceof FormData
+  const file = body instanceof FormData;
+  const opts = file
     ? { method: 'POST', body }
     : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
-  const r = await fetch(api(env, method), opts);
+  opts.signal = AbortSignal.timeout(file ? 120e3 : 15e3);
+  let r;
+  try { r = await fetch(api(env, method), opts); } catch (e) { return { ok: false, timeout: true, description: String((e && e.message) || e) }; }
   try { return await r.json(); } catch (_) { return { ok: false }; }
 }
 const methodFor = field => 'send' + field[0].toUpperCase() + field.slice(1);
@@ -516,7 +525,14 @@ async function claimRoute(req, env, ctx) {
   const D = desk(env);
   if (!D) return { ok: false, error: 'desk' };
   const cid = cleanCid(d.clientId) || crypto.randomUUID().replace(/-/g, '');
-  const r = await D.claim(cid, d);
+  const limits = {
+    ip: req.headers.get('CF-Connecting-IP') || 'local',
+    phone: t.phone,
+    perIp: Number(env.CLAIMS_PER_IP) || CLAIMS_PER_IP,
+    perPhone: Number(env.CLAIMS_PER_PHONE) || CLAIMS_PER_PHONE
+  };
+  const r = await D.claim(cid, d, limits);
+  if (r.error === 'limit') return { ok: false, error: 'limit' };   // в Google не уходим: там тоже лимит
   if (r.error) return { ok: false, error: r.error };                // страница уйдёт в Google
   ctx.waitUntil(D.process(r.id));                                   // Telegram и таблица — после ответа
   return { ok: true, id: r.id, uploadKey: r.uploadKey, msgId: r.msgId || null, repeat: r.repeat || undefined };
@@ -529,7 +545,7 @@ async function eventRoute(req, env, ctx) {
   let action = '';
   try { action = JSON.parse(body).action; } catch (_) {}
   if ((action === 'event' || action === 'promo') && body.length < 4096 && env.GAS_URL) {
-    ctx.waitUntil(fetch(env.GAS_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}));
+    ctx.waitUntil(fetch(env.GAS_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, signal: AbortSignal.timeout(30e3) }).catch(() => {}));
   }
   return new Response(null, { status: 204, headers: CORS });
 }
@@ -546,7 +562,21 @@ async function syncRoute(req, env) {
   const d = await readJson(req, 4096);
   const last = Math.floor(Number(d.last) || 0);
   if (d.sig !== await hmac(env, 'sync.' + last)) return { ok: false, error: 'sig' };
-  return { ok: true, last: await desk(env).sync(last) };
+  const n = await desk(env).sync(last);
+  return { ok: true, last: n, gas: await probeGas(env), gasUrl: env.GAS_URL || '' };
+}
+
+// для setup(): задан ли GAS_URL и отвечает ли по нему новая версия Code.gs
+//   none — переменной нет; ok — отвечает v6; old — отвечает, но старая версия развертывания;
+//   error — не отвечает или ответ не JSON
+async function probeGas(env) {
+  if (!env.GAS_URL) return 'none';
+  try {
+    const r = await fetch(env.GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'ping' }),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, signal: AbortSignal.timeout(20e3) });
+    const j = await r.json();
+    return j && j.ok === true && j.pong === true ? 'ok' : 'old';
+  } catch (_) { return 'error'; }
 }
 
 // ключ заявки — в том же формате, что выдаёт Google: nonce.срок.подпись(id.nonce.срок)
@@ -633,9 +663,15 @@ function ticketText(id, d) {
 // ================= DURABLE OBJECT: счётчик номеров и очередь «Telegram + таблица» =================
 // Один экземпляр («main»). Номер выдаётся синхронной операцией SQLite — без await внутри, поэтому
 // две одновременные заявки никогда не получат один номер.
+//
+// Сроки повторов:
+//   Telegram — до 24 ч; дальше сообщение досылает Google (строки с отметкой «Worker» старше 25 ч);
+//   строка в таблицу — до 7 дней (например, забыли GAS_URL: после исправления строки дойдут сами);
+//   через 24 ч без строки в таблице — одно предупреждение в группу ответом на заявку.
 const DAY = 86400e3;
+const TG_WINDOW = DAY, GS_WINDOW = 7 * DAY;
 const FB_FIRST = 9001, FB_LAST = 9999;
-const backoff = n => Math.min(3600e3, [15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 1800e3][n] || 3600e3);
+const backoff = n => [15e3, 30e3, 60e3, 120e3, 300e3, 600e3, 1800e3][Math.max(0, n)] || 3600e3;
 
 export class TicketDesk extends DurableObject {
   constructor(ctx, env) {
@@ -645,7 +681,12 @@ export class TicketDesk extends DurableObject {
       CREATE TABLE IF NOT EXISTS claims(cid TEXT PRIMARY KEY, id INTEGER NOT NULL, ukey TEXT, ts INTEGER);
       CREATE TABLE IF NOT EXISTS jobs(id INTEGER PRIMARY KEY, cid TEXT, body TEXT, msg INTEGER,
         tg INTEGER DEFAULT 0, gs INTEGER DEFAULT 0, ttries INTEGER DEFAULT 0, gtries INTEGER DEFAULT 0,
-        tbusy INTEGER DEFAULT 0, gbusy INTEGER DEFAULT 0, next_at INTEGER DEFAULT 0, ts INTEGER)`);
+        tbusy INTEGER DEFAULT 0, gbusy INTEGER DEFAULT 0, next_at INTEGER DEFAULT 0, ts INTEGER,
+        warned INTEGER DEFAULT 0);
+      CREATE TABLE IF NOT EXISTS hits(k TEXT NOT NULL, ts INTEGER NOT NULL);
+      CREATE INDEX IF NOT EXISTS hits_k ON hits(k, ts);`);
+    // счётчик, созданный до этой версии: досоздаём колонку предупреждения
+    try { this.sql.exec('ALTER TABLE jobs ADD COLUMN warned INTEGER DEFAULT 0'); } catch (_) {}
   }
   one(q, ...a) { return this.sql.exec(q, ...a).toArray()[0] || null; }
   last() { const r = this.one("SELECT v FROM meta WHERE k='last'"); return r ? Number(r.v) : 0; }
@@ -665,8 +706,23 @@ export class TicketDesk extends DurableObject {
   // пока счётчик не сверен с таблицей (setup() в Google), номера не выдаём — иначе возможны повторы
   synced() { return !!this.one("SELECT v FROM meta WHERE k='last'"); }
 
-  async claim(cid, payload) {
+  // лимит за час по IP и по телефону (синхронно: проверка и учёт без await между ними)
+  limited(l) {
+    if (!l) return false;
+    const now = Date.now(), from = now - 3600e3;
+    this.sql.exec('DELETE FROM hits WHERE ts < ?', now - 2 * 3600e3);
+    const n = k => this.one('SELECT COUNT(*) AS n FROM hits WHERE k = ? AND ts > ?', k, from).n;
+    const ipK = 'ip:' + l.ip, phK = 'ph:' + l.phone;
+    if (n(ipK) >= l.perIp || (l.phone && n(phK) >= l.perPhone)) return true;
+    this.sql.exec('INSERT INTO hits(k, ts) VALUES(?, ?)', ipK, now);
+    if (l.phone) this.sql.exec('INSERT INTO hits(k, ts) VALUES(?, ?)', phK, now);
+    return false;
+  }
+
+  async claim(cid, payload, limits) {
     if (!this.synced()) return { error: 'nosync' };
+    // повтор той же заявки лимитом не считается
+    if (!this.one('SELECT 1 AS x FROM claims WHERE cid = ?', cid) && this.limited(limits)) return { error: 'limit' };
     const t = this.take(cid);
     if (!t.repeat) this.sql.exec('INSERT OR IGNORE INTO jobs(id, cid, body, ts) VALUES(?, ?, ?, ?)', t.id, cid, JSON.stringify(payload), Date.now());
     let ukey = t.ukey;
@@ -710,8 +766,9 @@ export class TicketDesk extends DurableObject {
     let j = this.one('SELECT * FROM jobs WHERE id = ?', id);
     if (!j) return;
     const now = Date.now();
+    const age = now - j.ts;
     const d = JSON.parse(j.body);
-    if (!j.tg && !(j.tbusy && now - j.tbusy < 60e3)) {
+    if (!j.tg && age < TG_WINDOW && !(j.tbusy && now - j.tbusy < 60e3)) {
       this.sql.exec('UPDATE jobs SET tbusy = ? WHERE id = ?', now, id);
       let msg = 0;
       try {
@@ -725,24 +782,43 @@ export class TicketDesk extends DurableObject {
     j = this.one('SELECT * FROM jobs WHERE id = ?', id);
     // в таблицу — сразу после попытки Telegram; если он не ответил, строка уйдёт с отметкой «Worker»,
     // а когда сообщение дойдёт, Worker пришлёт строку ещё раз — Google допишет номер сообщения
-    if (!j.gs && (j.tg || j.ttries >= 1) && !(j.gbusy && now - j.gbusy < 60e3)) {
+    if (!j.gs && age < GS_WINDOW && (j.tg || j.ttries >= 1 || age >= TG_WINDOW) && !(j.gbusy && now - j.gbusy < 60e3)) {
       this.sql.exec('UPDATE jobs SET gbusy = ? WHERE id = ?', Date.now(), id);
       let ok = false;
       try {
         const body = JSON.stringify({ action: 'ingest', id, clientId: j.cid, msgId: j.msg || null,
           sig: await hmac(this.env, 'ingest.' + id + '.' + j.cid), payload: d });
-        const r = await fetch(this.env.GAS_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+        const r = await fetch(this.env.GAS_URL, { method: 'POST', body, headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          signal: AbortSignal.timeout(30e3) });
         ok = (await r.json()).ok === true;
       } catch (_) {}
       if (ok) this.sql.exec('UPDATE jobs SET gs = 1, gbusy = 0 WHERE id = ?', id);
       else this.sql.exec('UPDATE jobs SET gbusy = 0, gtries = gtries + 1 WHERE id = ?', id);
     }
     j = this.one('SELECT * FROM jobs WHERE id = ?', id);
-    if ((!j.tg || !j.gs) && Date.now() - j.ts < DAY) {
-      const at = Date.now() + backoff(Math.max(j.tg ? 0 : j.ttries, j.gs ? 0 : j.gtries) - 1);
-      this.sql.exec('UPDATE jobs SET next_at = ? WHERE id = ?', at, id);
-      await this.arm(at);
+    // сутки без строки в таблице — одно предупреждение в группу (ответом на заявку)
+    if (!j.gs && j.tg && age >= TG_WINDOW && !j.warned) {
+      const r = await tg(this.env, 'sendMessage', { chat_id: this.env.CHAT_ID,
+        text: '⚠️ Заявка #' + id + ' за сутки не попала в таблицу. Проверьте GAS_URL в Cloudflare и развертывание Google. Worker продолжит попытки до 7 дней.',
+        reply_parameters: { message_id: j.msg, allow_sending_without_reply: true } });
+      if (r.ok) this.sql.exec('UPDATE jobs SET warned = 1 WHERE id = ?', id);
     }
+    this.plan(id);
+  }
+
+  // следующий будильник для заявки: по самому «отстающему» из незавершённых дел
+  plan(id) {
+    const j = this.one('SELECT * FROM jobs WHERE id = ?', id);
+    if (!j) return;
+    const now = Date.now(), age = now - j.ts;
+    const tgDue = !j.tg && age < TG_WINDOW;
+    const gsDue = !j.gs && age < GS_WINDOW;
+    if (!tgDue && !gsDue) return;
+    let at = now + backoff(Math.max(tgDue ? j.ttries : 0, gsDue ? j.gtries : 0) - 1);
+    if (tgDue && age + (at - now) > TG_WINDOW) at = j.ts + TG_WINDOW + 1e3;   // успеть к суточной отметке
+    if (j.tbusy && now - j.tbusy < 60e3) at = Math.min(at, j.tbusy + 61e3);   // занятость истечёт — проверим
+    this.sql.exec('UPDATE jobs SET next_at = ? WHERE id = ?', at, id);
+    return this.arm(at);
   }
 
   async arm(at) {
@@ -751,13 +827,19 @@ export class TicketDesk extends DurableObject {
     if (!cur || cur > at || cur < Date.now() - 60e3) await this.ctx.storage.setAlarm(at);
   }
 
+  pending(now) {
+    return '((tg = 0 AND ts > ' + (now - TG_WINDOW) + ') OR (gs = 0 AND ts > ' + (now - GS_WINDOW) + '))';
+  }
+
   async alarm() {
     const now = Date.now();
-    const due = this.sql.exec('SELECT id FROM jobs WHERE (tg = 0 OR gs = 0) AND ts > ? AND next_at <= ?', now - DAY, now).toArray();
+    const due = this.sql.exec('SELECT id FROM jobs WHERE ' + this.pending(now) + ' AND next_at <= ?', now).toArray();
     for (const r of due) await this.process(r.id);
     this.sql.exec('DELETE FROM claims WHERE ts < ?', now - 7 * DAY);
     this.sql.exec('DELETE FROM jobs WHERE ts < ? AND ((tg = 1 AND gs = 1) OR ts < ?)', now - 7 * DAY, now - 8 * DAY);
-    const nxt = this.one('SELECT MIN(next_at) AS t FROM jobs WHERE (tg = 0 OR gs = 0) AND ts > ?', now - DAY);
+    this.sql.exec('DELETE FROM hits WHERE ts < ?', now - 2 * 3600e3);
+    const t = Date.now();
+    const nxt = this.one('SELECT MIN(next_at) AS t FROM jobs WHERE ' + this.pending(t));
     if (nxt && nxt.t) await this.ctx.storage.setAlarm(Math.max(nxt.t, Date.now() + 5e3));
   }
 }
