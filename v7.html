@@ -40,6 +40,8 @@
   [hidden]{display:none !important}
   /* без «резинки» у краёв: Android растягивает страницу, iPhone её оттягивает */
   html,body{overscroll-behavior:none}
+  /* без увеличения по двойному тапу (быстрые нажатия «+» у монет и купюр); щипок двумя пальцами работает */
+  *{touch-action:manipulation!important}   /* !important: у кнопок стоит all:unset, он сбрасывает и это свойство */
   html{background:var(--metal-lo)}
   body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
     color:var(--text);font:600 15px/1.45 var(--sys)}
