@@ -1,4 +1,4 @@
-# Настройки Cloudflare Worker мойки (v6). Секретов здесь нет и быть не должно:
+# Настройки Cloudflare Worker мойки (v6, выкладка из GitHub через Workers Builds). Секретов здесь нет и быть не должно:
 # BOT_TOKEN и SIGN_KEY хранятся в Cloudflare (Settings → Variables and Secrets).
 name = "mtrassa"
 main = "worker.js"
