@@ -41,7 +41,9 @@
   /* без «резинки» у краёв: Android растягивает страницу, iPhone её оттягивает */
   html,body{overscroll-behavior:none}
   /* без увеличения по двойному тапу (быстрые нажатия «+» у монет и купюр); щипок двумя пальцами работает */
-  *{touch-action:manipulation!important}   /* !important: у кнопок стоит all:unset, он сбрасывает и это свойство */
+  *{touch-action:manipulation!important}
+  /* быстрые нажатия не выделяют текст и не вызывают меню */
+  button,.key,.chip,.pm,.cnt,label{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* !important: у кнопок стоит all:unset, он сбрасывает и это свойство */
   html{background:var(--metal-lo)}
   body{margin:0;min-height:100vh;min-height:100svh;background:linear-gradient(180deg,var(--metal-hi),var(--metal-lo)) fixed;
     color:var(--text);font:600 15px/1.45 var(--sys)}
@@ -707,6 +709,26 @@ const CONFIG = {
   }
 };
 /* =========================================================== */
+
+// ================= 0. БЕЗ УВЕЛИЧЕНИЯ ПО ДВОЙНОМУ ТАПУ =================
+// CSS (touch-action) понимают не все браузеры — на iPhone страница могла «прыгать» при быстрых нажатиях «+».
+// Второе быстрое касание браузеру не отдаём (иначе он увеличит страницу), а нажатие выполняем сами.
+// Поля ввода и прокрутку не трогаем.
+{
+  let lastEnd = 0, moved = false;
+  document.addEventListener('touchstart', () => { moved = false; }, { passive: true });
+  document.addEventListener('touchmove', () => { moved = true; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const now = e.timeStamp, quick = now - lastEnd < 450;
+    lastEnd = moved ? 0 : now;
+    if (!quick || moved || e.touches.length || e.changedTouches.length !== 1) return;
+    const t = e.target;
+    if (!(t instanceof Element) || t.closest('input:not([type=checkbox]):not([type=radio]), textarea, select, audio, video')) return;
+    e.preventDefault();
+    const el = t.closest('button, a[href], label, input, [data-act]');
+    if (el && !el.disabled) el.click();
+  }, { passive: false });
+}
 
 // ================= 1. УТИЛИТЫ =================
 const $ = id => document.getElementById(id);
