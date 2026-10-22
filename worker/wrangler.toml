@@ -20,5 +20,9 @@ class_name = "TicketDesk"
 tag = "v1"
 new_sqlite_classes = ["TicketDesk"]
 
+# v8: куда ведёт ссылка «оставить отзыв» из просьбы после «Решено» (можно заменить прямо здесь, на GitHub)
+[vars]
+REVIEW_URL = "https://yandex.by/maps/org/avtomoyka/153062315248/reviews/?add-review=true"
+
 [triggers]
 crons = ["0 3 * * *"]

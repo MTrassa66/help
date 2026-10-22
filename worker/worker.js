@@ -36,6 +36,13 @@
 //   POST /file?id=&key=&cid=&part=&msg=&kind=&name=  — запасной путь: файл после номера
 //   POST /album?id=&key=&cid=&part=&msg=          — запасной путь: фото после номера
 //   GET  /sent?id=&key=&cid=&part=                — для Google: часть уже доставлена?
+//   v8:
+//   POST /change-phone                            — «Не работает размен»: телефон первого сообщившего (ключ заявки)
+//   POST /resolved                                — для Google: заявка «размен» решена — окно «первого» закрыто
+//   POST /review-prep                             — для Google: готовый текст просьбы об отзыве (подпись SIGN_KEY)
+//   GET  /w/<id>.<подпись>                        — владелец нажал «Попросить отзыв» → WhatsApp с текстом, отметка «запрошен»
+//   GET  /r/<id>.<подпись>                        — клиент открыл ссылку на отзыв → Яндекс Карты, отметка «перешли»
+//   REVIEW_URL (wrangler.toml)                    — куда ведёт ссылка на отзыв
 
 import { DurableObject } from 'cloudflare:workers';
 
@@ -47,6 +54,9 @@ const DRAFTS_PER_HOUR = 5;         // черновиков с одного IP в
 // заявок в час: по IP — щедро (у мобильных операторов много абонентов за одним адресом), по телефону — строго
 const CLAIMS_PER_IP = 20;
 const CLAIMS_PER_PHONE = 3;
+// v8: ссылка на форму отзыва (настройка — REVIEW_URL в wrangler.toml; здесь — запасное значение)
+const REVIEW_URL = 'https://yandex.by/maps/org/avtomoyka/153062315248/reviews/?add-review=true';
+const CHANGE_WINDOW = 48 * 3600e3;   // «размен»: если заявку не закрыли «Решено», окно «первого» закроется само
 const DRAFT_MAX_BYTES = 100 * MB;  // всего на один черновик
 // номера частей: фото 1–30, видео 100–109, голос 200–209 (одинаковы для всех путей — так работает защита от дублей)
 const KINDS = {
@@ -72,8 +82,13 @@ export default {
     const path = url.pathname.replace(/\/+$/, '');
     try {
       if (req.method === 'GET' && path.endsWith('/sent')) return json(await sentCheck(env, url.searchParams));
+      const short = req.method === 'GET' && path.match(/\/([rw])\/(\d+)\.([0-9a-f]{10})$/);
+      if (short) return await shortLink(env, ctx, short[1], Number(short[2]), short[3]);
       if (req.method !== 'POST') return new Response('ok', { headers: CORS });   // прогрев соединения
       if (path.endsWith('/claim')) return json(await claimRoute(req, env, ctx));
+      if (path.endsWith('/change-phone')) return json(await changePhoneRoute(req, env, ctx));
+      if (path.endsWith('/resolved')) return json(await resolvedRoute(req, env));
+      if (path.endsWith('/review-prep')) return json(await reviewPrepRoute(req, env));
       if (path.endsWith('/event')) return await eventRoute(req, env, ctx);
       if (path.endsWith('/next')) return json(await nextRoute(req, env));
       if (path.endsWith('/admin/sync')) return json(await syncRoute(req, env));
@@ -521,7 +536,7 @@ async function claimRoute(req, env, ctx) {
   const d = await readJson(req, 64 * 1024);
   if (d.website) return { ok: true, id: 0 };                         // ловушка для ботов
   const t = cleanTicket(d);
-  if (!t.category || t.phone.length < 10) return { ok: false, error: 'empty' };
+  if (!t.category || (t.code !== 'change' && t.phone.length < 10)) return { ok: false, error: 'empty' };   // размен — без телефона
   const D = desk(env);
   if (!D) return { ok: false, error: 'desk' };
   const cid = cleanCid(d.clientId) || crypto.randomUUID().replace(/-/g, '');
@@ -534,8 +549,75 @@ async function claimRoute(req, env, ctx) {
   const r = await D.claim(cid, d, limits);
   if (r.error === 'limit') return { ok: false, error: 'limit' };   // в Google не уходим: там тоже лимит
   if (r.error) return { ok: false, error: r.error };                // страница уйдёт в Google
+  if (r.dup) return { ok: true, id: r.id, dup: true };              // «размен» уже сообщили — в группу не дублируем
   ctx.waitUntil(D.process(r.id));                                   // Telegram и таблица — после ответа
   return { ok: true, id: r.id, uploadKey: r.uploadKey, msgId: r.msgId || null, repeat: r.repeat || undefined, first: r.first || undefined };
+}
+
+// ---------- v8: «Не работает размен» и просьба об отзыве ----------
+
+const cleanPhone = v => {
+  let d = String(v || '').replace(/\D/g, '').slice(0, 15);
+  if (/^80\d{9}$/.test(d)) d = '375' + d.slice(2);
+  if (/^\d{9}$/.test(d)) d = '375' + d;
+  return d.length >= 10 ? '+' + d : '';
+};
+const shortSig = async (env, kind, id) => (await hmac(env, kind + '.' + id)).slice(0, 10);
+
+// телефон первого сообщившего о размене: в строку заявки (через очередь «таблица») и ответом в группу
+async function changePhoneRoute(req, env, ctx) {
+  const d = await readJson(req, 4096);
+  const id = Math.floor(Number(d.id)) || 0;
+  if (!await keyOk(env, id, d.uploadKey)) return { ok: false, error: 'key' };
+  const phone = cleanPhone(d.phone);
+  if (!phone) return { ok: false, error: 'phone' };
+  const D = desk(env);
+  const r = D ? await D.changePhone(id, phone) : { error: 'nojob' };
+  if (r.error) return { ok: false, error: r.error };                // nojob — заявку вёл Google, страница отправит туда
+  if (!r.repeat) {
+    if (r.msg) ctx.waitUntil(tg(env, 'sendMessage', { chat_id: env.CHAT_ID, text: '📞 ' + phone + ' · 🎁 бонус при подтверждении',
+      reply_parameters: { message_id: r.msg, allow_sending_without_reply: true }, reply_markup: waButton(id, phone) }));
+    ctx.waitUntil(D.process(id));                                    // строка в таблице получит телефон
+  }
+  return { ok: true };
+}
+
+async function resolvedRoute(req, env) {
+  const d = await readJson(req, 4096);
+  const id = Math.floor(Number(d.id)) || 0;
+  if (!id || d.sig !== await hmac(env, 'resolved.' + id)) return { ok: false, error: 'sig' };
+  await desk(env).resolveChange(id);
+  return { ok: true };
+}
+
+// Google готовит просьбу об отзыве: текст и телефон храним, чтобы /w открыл WhatsApp сразу (без запроса в Google)
+async function reviewPrepRoute(req, env) {
+  const d = await readJson(req, 8192);
+  const id = Math.floor(Number(d.id)) || 0;
+  if (!id || d.sig !== await hmac(env, 'rp.' + id)) return { ok: false, error: 'sig' };
+  const phone = String(d.phone || '').replace(/\D/g, '');
+  const text = String(d.text || '').slice(0, 3000);
+  if (phone.length < 10 || !text) return { ok: false, error: 'empty' };
+  await desk(env).reviewPrep(id, phone, text);
+  return { ok: true };
+}
+
+// короткие ссылки: /w — владелец открывает WhatsApp с просьбой; /r — клиент идёт оставлять отзыв
+async function shortLink(env, ctx, kind, id, sig) {
+  const good = sig === await shortSig(env, kind, id);
+  const note = async (action, s) => {
+    if (!env.GAS_URL) return;
+    await fetch(env.GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, id, sig: await hmac(env, s + '.' + id) }), signal: AbortSignal.timeout(30e3) }).catch(() => {});
+  };
+  if (kind === 'r') {                                                 // клиента ведём на отзыв в любом случае
+    if (good) ctx.waitUntil(note('review_click', 'rc'));
+    return Response.redirect(env.REVIEW_URL || REVIEW_URL, 302);
+  }
+  const rec = good ? await desk(env).reviewGet(id) : null;
+  if (!rec) return new Response('Ссылка устарела — попросите отзыв из таблицы ещё раз.', { status: 404, headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+  ctx.waitUntil(note('review_asked', 'ra'));
+  return Response.redirect('https://wa.me/' + rec.phone + '?text=' + encodeURIComponent(rec.text), 302);
 }
 
 // событие статистики: тело читаем сразу (после ответа оно уже недоступно), в Google — после ответа
@@ -592,6 +674,7 @@ const CATEGORIES = {
   'program.nostart':  { sheet: 'Проблема с программой: Не включается',            tg: 'Программа — не включается' },
   'program.nosupply': { sheet: 'Проблема с программой: Нет воды, пены или воска', tg: 'Программа — нет воды, пены или воска' },
   'program.pressure': { sheet: 'Проблема с программой: Слабый напор',             tg: 'Программа — слабый напор' },
+  'change':           { sheet: 'Не работает размен',                              tg: 'Не работает размен' },
   'other':            { sheet: 'Другое',                                          tg: 'Другое' }
 };
 const PROGRAMS = { 1: 'Предварительная мойка', 2: 'Пена', 3: 'Ополаскивание', 4: 'Воск', 5: 'Блеск + сушка' };
@@ -625,6 +708,7 @@ function cleanTicket(d) {
   if (count(d.skipped)) attach.push('большое видео пришлёт в Viber/WhatsApp');
   const post = /^\d+$/.test(String(d.post || '').trim()) && +d.post >= 1 && +d.post <= POSTS ? String(+d.post) : '';
   return {
+    code: CATEGORIES[raw] ? raw : '',
     post, category: CATEGORIES[raw] ? CATEGORIES[raw].sheet : raw, tgCategory: CATEGORIES[raw] ? CATEGORIES[raw].tg : raw,
     programsText: progs.map(n => n + ' ' + PROGRAMS[n]).join(', '), payText, total,
     selfhelp: d.selfhelpTried === true, phone: digits ? '+' + digits : '', contact: cut(d.contact, 100),
@@ -641,6 +725,11 @@ function waButton(id, phone) {
 }
 
 function ticketText(id, d) {
+  if (d.code === 'change') {                                         // v8: размен — один на мойку, пост — где сканировали
+    const L = ['🪙 <b>Не работает размен</b>' + (d.post ? ' (сканировали с поста ' + escH(d.post) + ')' : ''), 'Заявка #' + id];
+    if (d.phone) L.push('<b>Телефон:</b> ' + escH(d.phone) + ' · 🎁 бонус при подтверждении');
+    return L.join('\n');
+  }
   const make = comment => {
     const L = ['🔴 <b>Заявка #' + id + '</b>' + (d.post ? ' / Пост ' + escH(d.post) : '')];
     L.push('<b>Проблема:</b> ' + escH(d.tgCategory || d.category));
@@ -694,6 +783,7 @@ export class TicketDesk extends DurableObject {
         warned INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS hits(k TEXT NOT NULL, ts INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS recent(post TEXT, cat TEXT, ts INTEGER);
+      CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, phone TEXT, text TEXT, ts INTEGER);
       CREATE INDEX IF NOT EXISTS hits_k ON hits(k, ts);`);
     // счётчик, созданный до этой версии: досоздаём колонку предупреждения
     try { this.sql.exec('ALTER TABLE jobs ADD COLUMN warned INTEGER DEFAULT 0'); } catch (_) {}
@@ -730,14 +820,50 @@ export class TicketDesk extends DurableObject {
     return false;
   }
 
+  // v8: открытая заявка «Не работает размен» (пока не «Решено» и не дольше CHANGE_WINDOW)
+  chgOpen() {
+    const r = this.one("SELECT v FROM meta WHERE k='chg'");
+    let o = null;
+    try { o = r ? JSON.parse(r.v) : null; } catch (_) {}
+    return o && Date.now() - o.ts < CHANGE_WINDOW ? o : null;
+  }
+  resolveChange(id) {
+    const o = this.chgOpen();
+    if (o && o.id === Number(id)) this.sql.exec("DELETE FROM meta WHERE k='chg'");
+  }
+  // телефон первого сообщившего: в тело заявки и заново в таблицу
+  changePhone(id, phone) {
+    const j = this.one('SELECT body, msg FROM jobs WHERE id = ?', id);
+    if (!j) return { error: 'nojob' };
+    const d = JSON.parse(j.body);
+    if (cleanTicket(d).code !== 'change') return { error: 'nojob' };
+    if (d.phone) return { repeat: true, msg: j.msg };
+    d.phone = phone;
+    this.sql.exec('UPDATE jobs SET body = ?, gs = 0, gtries = 0 WHERE id = ?', JSON.stringify(d), id);
+    return { msg: j.msg };
+  }
+  reviewPrep(id, phone, text) {
+    this.sql.exec('INSERT INTO reviews(id, phone, text, ts) VALUES(?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET phone = excluded.phone, text = excluded.text, ts = excluded.ts',
+      id, phone, text, Date.now());
+  }
+  reviewGet(id) { return this.one('SELECT phone, text FROM reviews WHERE id = ?', id); }
+
   async claim(cid, payload, limits) {
     if (!this.synced()) return { error: 'nosync' };
+    const isChange = cleanTicket(payload).code === 'change';
+    if (isChange && !this.one('SELECT 1 AS x FROM claims WHERE cid = ?', cid)) {
+      const o = this.chgOpen();
+      if (o) return { id: o.id, dup: true };                         // о размене уже сообщили — ни номера, ни сообщения
+    }
     // повтор той же заявки лимитом не считается
     if (!this.one('SELECT 1 AS x FROM claims WHERE cid = ?', cid) && this.limited(limits)) return { error: 'limit' };
     const t = this.take(cid);
     if (!t.repeat) {
       this.sql.exec('INSERT OR IGNORE INTO jobs(id, cid, body, ts) VALUES(?, ?, ?, ?)', t.id, cid, JSON.stringify(payload), Date.now());
-      if (this.isFirst(payload)) this.sql.exec('UPDATE claims SET first = 1 WHERE cid = ?', cid);
+      if (isChange) {
+        this.sql.exec("INSERT INTO meta(k, v) VALUES('chg', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", JSON.stringify({ id: t.id, ts: Date.now() }));
+        this.sql.exec('UPDATE claims SET first = 1 WHERE cid = ?', cid);
+      } else if (this.isFirst(payload)) this.sql.exec('UPDATE claims SET first = 1 WHERE cid = ?', cid);
     }
     const first = !!(this.one('SELECT first FROM claims WHERE cid = ?', cid) || {}).first;
     let ukey = t.ukey;
@@ -866,6 +992,7 @@ export class TicketDesk extends DurableObject {
     this.sql.exec('DELETE FROM jobs WHERE ts < ? AND ((tg = 1 AND gs = 1) OR ts < ?)', now - 7 * DAY, now - 8 * DAY);
     this.sql.exec('DELETE FROM hits WHERE ts < ?', now - 2 * 3600e3);
     this.sql.exec('DELETE FROM recent WHERE ts < ?', now - DAY);
+    this.sql.exec('DELETE FROM reviews WHERE ts < ?', now - 30 * DAY);
     const t = Date.now();
     const nxt = this.one('SELECT MIN(next_at) AS t FROM jobs WHERE ' + this.pending(t));
     if (nxt && nxt.t) await this.ctx.storage.setAlarm(Math.max(nxt.t, Date.now() + 5e3));
