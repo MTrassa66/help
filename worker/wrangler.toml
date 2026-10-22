@@ -23,6 +23,8 @@ new_sqlite_classes = ["TicketDesk"]
 # v8: куда ведёт ссылка «оставить отзыв» из просьбы после «Решено» (можно заменить прямо здесь, на GitHub)
 [vars]
 REVIEW_URL = "https://yandex.by/maps/org/avtomoyka/153062315248/reviews/?add-review=true"
+# v8.1: адрес Worker для кнопок «📎 Все вложения» и связи с клиентом
+PUBLIC_URL = "https://mtrassa.dowtnohot.workers.dev"
 
 [triggers]
 crons = ["0 3 * * *"]
